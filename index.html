@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riftbound TCG Tournament Manager</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen flex flex-col bg-[#0b0f17] text-slate-100 selection:bg-amber-500 selection:text-black">
+
+    <!-- Header -->
+    <header class="border-b border-amber-900/40 bg-[#090d14]/90 backdrop-blur sticky top-0 z-40 shadow-lg shadow-black/50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center border border-amber-500/50 shadow-inner shadow-amber-400/20">
+                    <span class="text-xl font-bold font-arcane text-amber-100">RB</span>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-wider font-arcane text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600">
+                        Riftbound Tournament Hub
+                    </h1>
+                    <p class="text-xs text-slate-400 tracking-wide">TCG Swiss &amp; Elimination Manager</p>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex flex-wrap bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 shadow-inner gap-1">
+                <button onclick="switchTab('players')" id="nav-players" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-amber-500 text-slate-950 font-semibold shadow cursor-pointer">
+                    Summoners (<span id="player-count">0</span>)
+                </button>
+                <button onclick="switchTab('swiss')" id="nav-swiss" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
+                    Swiss Pairings
+                </button>
+                <button onclick="switchTab('standings')" id="nav-standings" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
+                    Standings &amp; Tiebreakers
+                </button>
+                <button onclick="switchTab('elimination')" id="nav-elimination" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
+                    Elimination Bracket
+                </button>
+                <button onclick="switchTab('meta')" id="nav-meta" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
+                    Meta Breakdown
+                </button>
+                <button onclick="switchTab('matrix')" id="nav-matrix" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
+                    Winrate Matrix
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+
+        <!-- ================= TAB 1: PLAYERS ================= -->
+        <section id="tab-players" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Registration Card -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <h2 class="text-xl font-bold font-arcane text-amber-400 mb-4 flex items-center gap-2">
+                        <span>⚔️</span> Register Summoner
+                    </h2>
+                    <form id="player-form" onsubmit="addPlayer(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Summoner Name</label>
+                            <input type="text" id="p-name" required placeholder="e.g. Faker" 
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Deck Type (Legend)</label>
+                            <select id="p-deck" required 
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition-colors">
+                                <option value="" disabled selected>Select a Legend (58 available)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-bold font-arcane rounded-xl shadow-lg shadow-amber-600/20 transition-all cursor-pointer">
+                            Add to Tournament
+                        </button>
+                    </form>
+
+                    <div class="mt-6 pt-6 border-t border-slate-800/80 space-y-3">
+                        <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Tournament Controls</h3>
+                        <button onclick="loadSamplePlayers()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-xl border border-slate-700 transition-colors cursor-pointer">
+                            Load Sample Summoners (8)
+                        </button>
+                        <button onclick="runSwissDiagnosticTests()" class="w-full py-2.5 bg-indigo-950/50 hover:bg-indigo-900/60 text-indigo-300 text-sm font-medium rounded-xl border border-indigo-800/60 transition-colors cursor-pointer">
+                            🧪 Verify Swiss Pairing Engine
+                        </button>
+                        <button onclick="promptResetTournament()" class="w-full py-2.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-sm font-medium rounded-xl border border-rose-900/50 transition-colors cursor-pointer">
+                            Reset Entire Tournament
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Registered List Table -->
+                <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
+                            <span>📜</span> Registered Roster
+                        </h2>
+                        <span id="player-badge" class="text-xs bg-slate-800 text-amber-400 px-3 py-1 rounded-full border border-amber-500/20 font-medium">0 Registered</span>
+                    </div>
+
+                    <div class="overflow-x-auto flex-grow rounded-xl border border-slate-800/80 bg-slate-950/50 max-h-[420px]">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                                    <th class="p-3.5 font-semibold">#</th>
+                                    <th class="p-3.5 font-semibold">Summoner</th>
+                                    <th class="p-3.5 font-semibold">Legend / Deck Type</th>
+                                    <th class="p-3.5 font-semibold text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="players-table-body" class="divide-y divide-slate-900 text-sm">
+                                <tr>
+                                    <td colspan="4" class="p-8 text-center text-slate-500 italic">No summoners registered yet. Add players or load sample roster.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="generateSwissPairings()" id="start-swiss-btn" class="px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-slate-950 font-bold font-arcane rounded-xl shadow-lg shadow-emerald-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            Generate Round 1 Pairings ➔
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: SWISS PAIRINGS ================= -->
+        <section id="tab-swiss" class="hidden space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 border border-slate-800/80 p-6 rounded-2xl shadow-xl">
+                <div>
+                    <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
+                        <span>⚔️</span> Swiss Pairings Matrix
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Backtracking Swiss solver pairs players by Point Bracket while preventing rematches and rotating BYEs fairly.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <div id="round-tabs" class="flex flex-wrap gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                        <!-- Round buttons injected dynamically -->
+                    </div>
+                    <button onclick="promptRepairRound()" id="repair-round-btn" class="hidden px-4 py-2 bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer">
+                        ↻ Re-Pair Round
+                    </button>
+                    <button onclick="nextSwissRound()" id="next-round-btn" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        Next Round ➔
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Banners (Locking / Stale Pairings) -->
+            <div id="swiss-banners-container" class="space-y-3"></div>
+
+            <!-- Matches Container -->
+            <div id="swiss-rounds-container" class="space-y-6"></div>
+        </section>
+
+        <!-- ================= TAB 3: STANDINGS ================= -->
+        <section id="tab-standings" class="hidden space-y-6">
+            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
+                            <span>🏆</span> Tournament Standings &amp; Tiebreakers
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Calculated using official TCG metrics: Match Points, OMW%, GW%, and OGW%.</p>
+                    </div>
+                    <button onclick="proceedToElimination()" id="generate-cut-btn" class="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-bold font-arcane text-sm rounded-xl shadow-lg shadow-amber-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        Generate Top Cut Bracket ➔
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950/50">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                                <th class="p-3.5 font-semibold text-center w-16">Rank</th>
+                                <th class="p-3.5 font-semibold">Summoner</th>
+                                <th class="p-3.5 font-semibold">Legend</th>
+                                <th class="p-3.5 font-semibold text-center">Record (W-L-D)</th>
+                                <th class="p-3.5 font-semibold text-center">Points</th>
+                                <th class="p-3.5 font-semibold text-center" title="Opponent Match Win %">OMW%</th>
+                                <th class="p-3.5 font-semibold text-center" title="Game Win %">GW%</th>
+                                <th class="p-3.5 font-semibold text-center" title="Opponent Game Win %">OGW%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="standings-table-body" class="divide-y divide-slate-900">
+                            <tr>
+                                <td colspan="8" class="p-8 text-center text-slate-500 italic">No active Swiss tournament. Generate Round 1 Pairings to view standings.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: ELIMINATION ================= -->
+        <section id="tab-elimination" class="hidden space-y-6">
+            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
+                            <span>⚔️</span> Single Elimination Playoffs
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Single elimination bracket seeded from Swiss standings.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Cut Size:</label>
+                        <select id="cut-size-select" onchange="generateEliminationBracket()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-amber-500">
+                            <option value="4">Top 4</option>
+                            <option value="8" selected>Top 8</option>
+                            <option value="16">Top 16</option>
+                        </select>
+                        <button onclick="generateEliminationBracket()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs uppercase rounded-xl cursor-pointer transition-colors">
+                            Build / Reset Bracket
+                        </button>
+                    </div>
+                </div>
+
+                <div id="elimination-bracket-container" class="overflow-x-auto py-6">
+                    <p class="text-slate-500 italic text-center py-12">Complete Swiss rounds or click Build Bracket to populate playoffs.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 5: META BREAKDOWN ================= -->
+        <section id="tab-meta" class="hidden space-y-6">
+            <!-- Summary KPI Cards -->
+            <div id="meta-kpi-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Field Representation Share -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col">
+                    <div class="mb-4">
+                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
+                            <span>📊</span> Field Representation
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Share of registered Summoners piloting each Legend.</p>
+                    </div>
+                    <div id="meta-bars-container" class="space-y-4 flex-grow overflow-y-auto max-h-[480px] pr-1"></div>
+                </div>
+
+                <!-- Legend Performance Matrix -->
+                <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                        <div>
+                            <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
+                                <span>📈</span> Legend Performance &amp; Conversion
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-1">Aggregated Swiss match/game win rates (excluding BYEs) and Top Cut conversion.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Sort By:</label>
+                            <select id="meta-sort-select" onchange="renderMetaBreakdown()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-100 text-xs focus:outline-none focus:border-amber-500">
+                                <option value="pilots">Most Popular (Pilots)</option>
+                                <option value="winrate">Highest Match Win %</option>
+                                <option value="gamewinrate">Highest Game Win %</option>
+                                <option value="topcut">Top Cut Conversion</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950/50">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                                    <th class="p-3.5 font-semibold">Legend</th>
+                                    <th class="p-3.5 font-semibold text-center">Pilots</th>
+                                    <th class="p-3.5 font-semibold text-center">Meta %</th>
+                                    <th class="p-3.5 font-semibold text-center">Matches (W-L-D)</th>
+                                    <th class="p-3.5 font-semibold text-center">Match Win %</th>
+                                    <th class="p-3.5 font-semibold text-center">Game Win %</th>
+                                    <th class="p-3.5 font-semibold text-center">Top Cut</th>
+                                </tr>
+                            </thead>
+                            <tbody id="meta-table-body" class="divide-y divide-slate-900"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 6: WINRATE MATRIX ================= -->
+        <section id="tab-matrix" class="hidden space-y-6">
+            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
+                            <span>🎛️</span> Legend Head-to-Head Winrate Matrix
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Row Legend win percentage against Column Legend across completed tournament matches.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                            <input type="checkbox" id="matrix-include-elim" checked onchange="renderWinrateMatrix()" class="accent-amber-500 rounded cursor-pointer">
+                            <span>Include Elimination Matches</span>
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Metric:</label>
+                            <select id="matrix-metric-select" onchange="renderWinrateMatrix()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-100 text-xs focus:outline-none focus:border-amber-500">
+                                <option value="match">Match Win %</option>
+                                <option value="game">Game Win % (Swiss)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Legend Color Key -->
+                <div class="flex flex-wrap items-center gap-4 mb-4 text-xs text-slate-400">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-950 border border-emerald-500/50 inline-block"></span> Favorable (&gt;55%)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-950/80 border border-amber-500/40 inline-block"></span> Even (45%–55%)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-950 border border-rose-500/50 inline-block"></span> Unfavorable (&lt;45%)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-slate-900 border border-slate-800 inline-block"></span> Mirror / No Data</span>
+                </div>
+
+                <div id="winrate-matrix-container" class="overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950/50"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom Confirmation / Diagnostics Modal -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <h3 id="modal-title" class="text-lg font-bold font-arcane text-amber-400">Confirm Action</h3>
+            <div id="modal-message" class="text-sm text-slate-300 leading-relaxed max-h-96 overflow-y-auto"></div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button id="modal-cancel-btn" onclick="closeModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors">
+                    Cancel
+                </button>
+                <button id="modal-confirm-btn" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-[#090d14] py-6 text-center text-xs text-slate-500">
+        <p>Riftbound Tournament Manager • Built for Competitive TCG Play</p>
+    </footer>
+
+    <!-- Modular Scripts -->
+    <script src="legends.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
