@@ -69,9 +69,9 @@
                         </div>
                         <div>
                             <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Deck Type (Legend)</label>
-                            <select id="p-deck" required 
+                            <select id="p-deck" 
                                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition-colors">
-                                <option value="" disabled selected>Select a Legend (58 available)</option>
+                                <option value="" selected>No Legend Selected (Optional)</option>
                             </select>
                         </div>
                         <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-bold font-arcane rounded-xl shadow-lg shadow-amber-600/20 transition-all cursor-pointer">
@@ -79,14 +79,20 @@
                         </button>
                     </form>
 
+                    <!-- Bulk Import from TXT -->
+                    <div class="mt-6 pt-6 border-t border-slate-800/80 space-y-3">
+                        <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Bulk Import (.txt)</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Format: <code class="text-amber-300 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">Name - Legend</code> (one per row, Legend can be empty).
+                        </p>
+                        <input type="file" id="txt-file-input" accept=".txt,text/plain" onchange="importPlayersFromTxt(event)" class="hidden">
+                        <button type="button" onclick="document.getElementById('txt-file-input').click()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-sm font-medium rounded-xl border border-slate-700 transition-colors cursor-pointer flex items-center justify-center gap-2">
+                            <span>📄</span> Import Summoners from .txt
+                        </button>
+                    </div>
+
                     <div class="mt-6 pt-6 border-t border-slate-800/80 space-y-3">
                         <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Tournament Controls</h3>
-                        <button onclick="loadSamplePlayers()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-xl border border-slate-700 transition-colors cursor-pointer">
-                            Load Sample Summoners (8)
-                        </button>
-                        <button onclick="runSwissDiagnosticTests()" class="w-full py-2.5 bg-indigo-950/50 hover:bg-indigo-900/60 text-indigo-300 text-sm font-medium rounded-xl border border-indigo-800/60 transition-colors cursor-pointer">
-                            🧪 Verify Swiss Pairing Engine
-                        </button>
                         <button onclick="promptResetTournament()" class="w-full py-2.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-sm font-medium rounded-xl border border-rose-900/50 transition-colors cursor-pointer">
                             Reset Entire Tournament
                         </button>
@@ -102,7 +108,7 @@
                         <span id="player-badge" class="text-xs bg-slate-800 text-amber-400 px-3 py-1 rounded-full border border-amber-500/20 font-medium">0 Registered</span>
                     </div>
 
-                    <div class="overflow-x-auto flex-grow rounded-xl border border-slate-800/80 bg-slate-950/50 max-h-[420px]">
+                    <div class="overflow-x-auto flex-grow rounded-xl border border-slate-800/80 bg-slate-950/50 max-h-[460px]">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
@@ -114,7 +120,7 @@
                             </thead>
                             <tbody id="players-table-body" class="divide-y divide-slate-900 text-sm">
                                 <tr>
-                                    <td colspan="4" class="p-8 text-center text-slate-500 italic">No summoners registered yet. Add players or load sample roster.</td>
+                                    <td colspan="4" class="p-8 text-center text-slate-500 italic">No summoners registered yet. Add players or import a .txt list.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -142,6 +148,9 @@
                     <div id="round-tabs" class="flex flex-wrap gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
                         <!-- Round buttons injected dynamically -->
                     </div>
+                    <button onclick="toggleForcePairingsPanel()" id="force-pair-btn" class="hidden px-4 py-2 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer">
+                        ⚡ Force Pairings
+                    </button>
                     <button onclick="promptRepairRound()" id="repair-round-btn" class="hidden px-4 py-2 bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer">
                         ↻ Re-Pair Round
                     </button>
@@ -151,7 +160,54 @@
                 </div>
             </div>
 
-            <!-- Status Banners (Locking / Stale Pairings) -->
+            <!-- Force Pairings Control Panel (Collapsible) -->
+            <div id="force-pairings-panel" class="hidden bg-slate-900/80 border border-indigo-500/40 rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
+                    <div>
+                        <h3 class="text-base font-bold font-arcane text-indigo-300 flex items-center gap-2">
+                            <span>⚡</span> Force Specific Pairings (Current Round)
+                        </h3>
+                        <p class="text-xs text-slate-400">Lock specific matchups or a BYE for the active round, or click any player on the tables below to swap seats directly.</p>
+                    </div>
+                    <button onclick="toggleForcePairingsPanel()" class="text-xs text-slate-400 hover:text-slate-200 px-2.5 py-1 rounded-lg bg-slate-800 cursor-pointer">
+                        Close ✕
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Summoner 1</label>
+                        <select id="force-p1-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            <option value="">Select Summoner...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Opponent / BYE</label>
+                        <select id="force-p2-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            <option value="">Select Opponent or BYE...</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="applyDirectForcedPairing()" class="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow transition-colors cursor-pointer">
+                            Apply Direct Swap
+                        </button>
+                        <button onclick="addLockedPairToList()" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-700/50 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer" title="Pin this matchup and re-solve the rest of the round">
+                            + Pin &amp; Solve
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pinned Forced Pairs List -->
+                <div id="pinned-pairs-container" class="hidden pt-3 border-t border-slate-800/80 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs uppercase tracking-wider text-indigo-300 font-semibold">Pinned Matchups for This Round:</span>
+                        <button onclick="clearPinnedPairs()" class="text-xs text-rose-400 hover:text-rose-300 underline cursor-pointer">Clear All Pins</button>
+                    </div>
+                    <div id="pinned-pairs-list" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+
+            <!-- Status Banners (Locking / Stale Pairings / Swap Mode) -->
             <div id="swiss-banners-container" class="space-y-3"></div>
 
             <!-- Matches Container -->
@@ -289,7 +345,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div>
                         <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
-                            <span>🎛️</span> Legend Head-to-Head Winrate Matrix
+                            Legend Head-to-Head Winrate Matrix
                         </h2>
                         <p class="text-xs text-slate-400 mt-1">Row Legend win percentage against Column Legend across completed tournament matches.</p>
                     </div>
@@ -322,7 +378,7 @@
 
     </main>
 
-    <!-- Custom Confirmation / Diagnostics Modal -->
+    <!-- Custom Confirmation Modal -->
     <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
         <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <h3 id="modal-title" class="text-lg font-bold font-arcane text-amber-400">Confirm Action</h3>

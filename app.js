@@ -7,6 +7,7 @@ let state = {
 };
 
 let modalCallback = null;
+let selectedSwapSlot = null; // { roundIdx, matchId, slot: 'p1' | 'p2' }
 
 // Initialize App
 window.addEventListener('DOMContentLoaded', () => {
@@ -17,7 +18,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function populateLegendDropdown() {
     const select = document.getElementById('p-deck');
-    select.innerHTML = '<option value="" disabled selected>Select a Legend (58 available)</option>';
+    select.innerHTML = '<option value="" selected>No Legend Selected (Optional)</option>';
     RIFTBOUND_LEGENDS.forEach(legend => {
         const opt = document.createElement('option');
         opt.value = legend;
@@ -48,6 +49,10 @@ function renderAll() {
     renderEliminationBracket();
     renderMetaBreakdown();
     renderWinrateMatrix();
+}
+
+function formatDeckLabel(deck) {
+    return deck && deck.trim() ? deck.trim() : 'Unassigned';
 }
 
 // Custom Modal Helpers
@@ -89,6 +94,7 @@ function promptResetTournament() {
         "Are you sure you want to clear all registered summoners, Swiss rounds, standings, and playoff brackets?",
         () => {
             state = { players: [], swissRounds: [], currentRoundIndex: 0, eliminationBracket: null };
+            selectedSwapSlot = null;
             saveState();
             renderAll();
             switchTab('players');
@@ -114,18 +120,21 @@ function switchTab(tabId) {
     if (tabId === 'matrix') renderWinrateMatrix();
 }
 
-// Player Management
+// ============================================================================
+// PLAYER REGISTRATION, LEGEND EDITING & TXT BULK IMPORT
+// ============================================================================
+
 function addPlayer(e) {
     e.preventDefault();
     const nameInput = document.getElementById('p-name');
     const deckInput = document.getElementById('p-deck');
 
-    if (!nameInput.value.trim() || !deckInput.value) return;
+    if (!nameInput.value.trim()) return;
 
     const newPlayer = {
         id: 'p_' + Math.random().toString(36).substring(2, 11),
         name: nameInput.value.trim(),
-        deck: deckInput.value,
+        deck: deckInput.value || '',
         active: true
     };
 
@@ -137,35 +146,113 @@ function addPlayer(e) {
     renderAll();
 }
 
+function updatePlayerDeck(playerId, newDeck) {
+    const player = state.players.find(p => p.id === playerId);
+    if (!player) return;
+    player.deck = newDeck || '';
+
+    // Sync player deck in elimination bracket if already generated
+    if (state.eliminationBracket && state.eliminationBracket.rounds) {
+        state.eliminationBracket.rounds.forEach(rMatches => {
+            rMatches.forEach(m => {
+                if (m.p1 && m.p1.id === playerId) m.p1.deck = player.deck;
+                if (m.p2 && m.p2.id === playerId) m.p2.deck = player.deck;
+                if (m.winner && m.winner.id === playerId) m.winner.deck = player.deck;
+            });
+        });
+    }
+
+    saveState();
+    renderAll();
+}
+
 function removePlayer(id) {
     state.players = state.players.filter(p => p.id !== id);
     saveState();
     renderAll();
 }
 
-function loadSamplePlayers() {
-    const samples = [
-        { name: "Faker", deck: "Ahri, Nine-Tailed Fox" },
-        { name: "Chovy", deck: "Azir, Emperor of the Sands" },
-        { name: "Ruler", deck: "Kai'Sa, Daughter of the Void" },
-        { name: "ShowMaker", deck: "Ahri, Nine-Tailed Fox" },
-        { name: "Caps", deck: "Ekko, Boy Who Shattered Time" },
-        { name: "Jojopyun", deck: "Akali, Rogue Assassin" },
-        { name: "Bwipo", deck: "Ornn, Fire Below the Mountain" },
-        { name: "Perkz", deck: "Azir, Emperor of the Sands" }
-    ];
+function matchOfficialLegend(rawLegendText) {
+    if (!rawLegendText) return '';
+    const cleaned = rawLegendText.trim();
+    if (!cleaned) return '';
 
-    samples.forEach(s => {
-        state.players.push({
-            id: 'p_' + Math.random().toString(36).substring(2, 11),
-            name: s.name,
-            deck: s.deck,
-            active: true
+    const lower = cleaned.toLowerCase();
+
+    // 1. Exact case-insensitive match
+    const exact = RIFTBOUND_LEGENDS.find(l => l.toLowerCase() === lower);
+    if (exact) return exact;
+
+    // 2. Match by champion short name before comma (if unique)
+    const byShortName = RIFTBOUND_LEGENDS.filter(l => l.split(',')[0].trim().toLowerCase() === lower);
+    if (byShortName.length === 1) return byShortName[0];
+
+    // 3. Partial / startsWith match
+    const starts = RIFTBOUND_LEGENDS.filter(l => l.toLowerCase().startsWith(lower));
+    if (starts.length === 1) return starts[0];
+
+    return '';
+}
+
+function importPlayersFromTxt(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result || '';
+        const lines = content.split(/\r?\n/);
+
+        let addedCount = 0;
+        let unmatchedLegends = [];
+
+        lines.forEach((rawLine, idx) => {
+            const line = rawLine.trim();
+            if (!line) return;
+
+            let namePart = line;
+            let legendPart = '';
+
+            // Support "Name - Legend" or "Name -"
+            const dashMatch = line.match(/^(.*?)\s*-\s*(.*)$/);
+            if (dashMatch) {
+                namePart = dashMatch[1].trim();
+                legendPart = dashMatch[2].trim();
+            }
+
+            if (!namePart) return;
+
+            const matchedLegend = matchOfficialLegend(legendPart);
+            if (legendPart && !matchedLegend) {
+                unmatchedLegends.push(`Row ${idx + 1}: "${escapeHtml(legendPart)}" (assigned as empty)`);
+            }
+
+            state.players.push({
+                id: 'p_' + Math.random().toString(36).substring(2, 11) + '_' + idx,
+                name: namePart,
+                deck: matchedLegend,
+                active: true
+            });
+            addedCount++;
         });
-    });
 
-    saveState();
-    renderAll();
+        event.target.value = '';
+        saveState();
+        renderAll();
+
+        if (unmatchedLegends.length > 0) {
+            openModal(
+                "Import Completed with Unrecognized Legends",
+                `<p class="mb-2">Imported <strong>${addedCount}</strong> Summoner(s).</p>
+                 <p class="text-xs text-amber-300 mb-2">The following Legend names did not match the 58 official Riftbound Legends and were left unassigned (you can select them in the Registered Roster table):</p>
+                 <ul class="list-disc pl-5 text-xs text-slate-400 space-y-1">${unmatchedLegends.map(item => `<li>${item}</li>`).join('')}</ul>`,
+                null,
+                true
+            );
+        }
+    };
+
+    reader.readAsText(file);
 }
 
 function renderPlayers() {
@@ -179,7 +266,7 @@ function renderPlayers() {
     startBtn.disabled = state.players.length < 2;
 
     if (state.players.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500 italic">No summoners registered yet. Add players or load sample roster.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500 italic">No summoners registered yet. Add players or import a .txt list.</td></tr>`;
         return;
     }
 
@@ -187,7 +274,15 @@ function renderPlayers() {
         <tr class="hover:bg-slate-900/50 transition-colors">
             <td class="p-3.5 text-slate-500 font-mono">${idx + 1}</td>
             <td class="p-3.5 font-semibold text-slate-200">${escapeHtml(p.name)}</td>
-            <td class="p-3.5 text-amber-400/90 font-medium">${escapeHtml(p.deck)}</td>
+            <td class="p-3.5">
+                <select onchange="updatePlayerDeck('${p.id}', this.value)"
+                    class="w-full max-w-xs bg-slate-900 border ${p.deck ? 'border-slate-700 text-amber-400' : 'border-amber-700/50 text-slate-400 italic'} rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:border-amber-500 transition-colors cursor-pointer">
+                    <option value="" ${!p.deck ? 'selected' : ''}>— Unassigned —</option>
+                    ${RIFTBOUND_LEGENDS.map(legend => `
+                        <option value="${escapeHtml(legend)}" ${p.deck === legend ? 'selected' : ''}>${escapeHtml(legend)}</option>
+                    `).join('')}
+                </select>
+            </td>
             <td class="p-3.5 text-right">
                 <button onclick="removePlayer('${p.id}')" class="text-rose-400 hover:text-rose-300 text-xs px-2.5 py-1 rounded-lg bg-rose-950/40 border border-rose-900/50 transition-colors cursor-pointer">Remove</button>
             </td>
@@ -196,7 +291,7 @@ function renderPlayers() {
 }
 
 // ============================================================================
-// TCG SWISS PAIRING ENGINE (WITH BRACKET RANDOMIZATION & BACKTRACKING)
+// TCG SWISS PAIRING ENGINE (WITH BRACKET RANDOMIZATION, BACKTRACKING & FORCED PAIRS)
 // ============================================================================
 
 function isRoundLocked(roundIdx) {
@@ -212,8 +307,9 @@ function shuffleArray(arr) {
     return copy;
 }
 
-function buildSwissPairings(playersList, priorRounds, targetRoundIdx) {
+function buildSwissPairings(playersList, priorRounds, targetRoundIdx, forcedSpecs = []) {
     const standings = calculateStandingsData(targetRoundIdx, playersList, priorRounds);
+    const statById = new Map(standings.map(s => [s.player.id, s]));
 
     const playedMap = new Map();
     const byeCountMap = new Map();
@@ -233,7 +329,55 @@ function buildSwissPairings(playersList, priorRounds, targetRoundIdx) {
         });
     });
 
-    const activeStandings = standings.filter(s => s.player.active);
+    const lockedIds = new Set();
+    const lockedMatches = [];
+    let forcedByeMatch = null;
+
+    forcedSpecs.forEach(spec => {
+        if (!spec.p1 || lockedIds.has(spec.p1)) return;
+        const s1 = statById.get(spec.p1);
+        if (!s1 || !s1.player.active) return;
+
+        if (spec.p2 === 'BYE' || spec.p2 === null) {
+            if (!forcedByeMatch) {
+                lockedIds.add(spec.p1);
+                forcedByeMatch = {
+                    id: 'm_' + Math.random().toString(36).substring(2, 9),
+                    p1: s1.player.id,
+                    p2: null,
+                    p1Points: s1.points,
+                    p2Points: null,
+                    winner: s1.player.id,
+                    p1Wins: 2,
+                    p2Wins: 0,
+                    draws: 0,
+                    bye: true,
+                    forced: true
+                };
+            }
+        } else if (spec.p2 && !lockedIds.has(spec.p2) && spec.p1 !== spec.p2) {
+            const s2 = statById.get(spec.p2);
+            if (s2 && s2.player.active) {
+                lockedIds.add(spec.p1);
+                lockedIds.add(spec.p2);
+                lockedMatches.push({
+                    id: 'm_' + Math.random().toString(36).substring(2, 9),
+                    p1: s1.player.id,
+                    p2: s2.player.id,
+                    p1Points: s1.points,
+                    p2Points: s2.points,
+                    winner: null,
+                    p1Wins: 0,
+                    p2Wins: 0,
+                    draws: 0,
+                    bye: false,
+                    forced: true
+                });
+            }
+        }
+    });
+
+    const activeStandings = standings.filter(s => s.player.active && !lockedIds.has(s.player.id));
     const pointBuckets = new Map();
     activeStandings.forEach(s => {
         if (!pointBuckets.has(s.points)) {
@@ -249,7 +393,7 @@ function buildSwissPairings(playersList, priorRounds, targetRoundIdx) {
         pool.push(...shuffledBucket);
     });
 
-    let byeMatch = null;
+    let byeMatch = forcedByeMatch;
 
     if (pool.length % 2 === 1) {
         let minByes = Infinity;
@@ -275,7 +419,8 @@ function buildSwissPairings(playersList, priorRounds, targetRoundIdx) {
             p1Wins: 2,
             p2Wins: 0,
             draws: 0,
-            bye: true
+            bye: true,
+            forced: false
         };
     }
 
@@ -345,7 +490,7 @@ function buildSwissPairings(playersList, priorRounds, targetRoundIdx) {
         solveBacktrack([], 0, true);
     }
 
-    const pairings = bestSolution.map(([idx1, idx2]) => {
+    const solvedPairings = (bestSolution || []).map(([idx1, idx2]) => {
         const s1 = pool[idx1];
         const s2 = pool[idx2];
         return {
@@ -358,10 +503,12 @@ function buildSwissPairings(playersList, priorRounds, targetRoundIdx) {
             p1Wins: 0,
             p2Wins: 0,
             draws: 0,
-            bye: false
+            bye: false,
+            forced: false
         };
     });
 
+    const pairings = [...lockedMatches, ...solvedPairings];
     if (byeMatch) {
         pairings.push(byeMatch);
     }
@@ -369,10 +516,272 @@ function buildSwissPairings(playersList, priorRounds, targetRoundIdx) {
     return pairings;
 }
 
-function createPairingsForRound(targetRoundIdx) {
+function createPairingsForRound(targetRoundIdx, forcedSpecs = []) {
     const priorRounds = state.swissRounds.slice(0, targetRoundIdx);
-    return buildSwissPairings(state.players, priorRounds, targetRoundIdx);
+    return buildSwissPairings(state.players, priorRounds, targetRoundIdx, forcedSpecs);
 }
+
+// ============================================================================
+// FORCE PAIRINGS & DIRECT SEAT SWAP CONTROLS
+// ============================================================================
+
+function toggleForcePairingsPanel() {
+    const panel = document.getElementById('force-pairings-panel');
+    if (!panel) return;
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) {
+        populateForcePairSelects();
+        renderPinnedPairsList();
+    }
+}
+
+function populateForcePairSelects() {
+    const p1Select = document.getElementById('force-p1-select');
+    const p2Select = document.getElementById('force-p2-select');
+    if (!p1Select || !p2Select) return;
+
+    const activeIdx = state.currentRoundIndex;
+    const enteringStandings = calculateStandingsData(activeIdx);
+    const sortedPlayers = enteringStandings
+        .filter(s => s.player.active)
+        .sort((a, b) => b.points - a.points || a.player.name.localeCompare(b.player.name));
+
+    const optionsHtml = sortedPlayers.map(s =>
+        `<option value="${s.player.id}">${escapeHtml(s.player.name)} (${s.points} pts - ${escapeHtml(shortLegendName(s.player.deck))})</option>`
+    ).join('');
+
+    p1Select.innerHTML = `<option value="">Select Summoner 1...</option>` + optionsHtml;
+    p2Select.innerHTML = `<option value="">Select Opponent or BYE...</option><option value="BYE">★ Assign Round BYE</option>` + optionsHtml;
+}
+
+function findPlayerSlotInRound(roundObj, playerId) {
+    for (let i = 0; i < roundObj.matches.length; i++) {
+        const m = roundObj.matches[i];
+        if (m.p1 === playerId) return { matchIdx: i, match: m, slot: 'p1' };
+        if (m.p2 === playerId) return { matchIdx: i, match: m, slot: 'p2' };
+    }
+    return null;
+}
+
+function normalizeRoundMatchesAfterSwap(roundIdx) {
+    const roundObj = state.swissRounds[roundIdx];
+    if (!roundObj) return;
+
+    const enteringStandings = calculateStandingsData(roundIdx);
+    const statMap = new Map(enteringStandings.map(s => [s.player.id, s]));
+
+    roundObj.matches.forEach(m => {
+        if (!m.p1 && m.p2) {
+            m.p1 = m.p2;
+            m.p2 = null;
+        }
+        const s1 = m.p1 ? statMap.get(m.p1) : null;
+        const s2 = m.p2 ? statMap.get(m.p2) : null;
+        m.p1Points = s1 ? s1.points : 0;
+        m.p2Points = s2 ? s2.points : null;
+
+        if (!m.p2) {
+            m.bye = true;
+            m.winner = m.p1;
+            m.p1Wins = 2;
+            m.p2Wins = 0;
+            m.draws = 0;
+        } else {
+            if (m.bye) {
+                m.bye = false;
+                m.winner = null;
+                m.p1Wins = 0;
+                m.p2Wins = 0;
+                m.draws = 0;
+            }
+        }
+    });
+}
+
+function executeSeatSwap(roundIdx, matchIdA, slotA, matchIdB, slotB) {
+    if (isRoundLocked(roundIdx)) return;
+    const roundObj = state.swissRounds[roundIdx];
+    if (!roundObj) return;
+
+    const matchA = roundObj.matches.find(m => m.id === matchIdA);
+    const matchB = roundObj.matches.find(m => m.id === matchIdB);
+    if (!matchA || !matchB) return;
+
+    const playerA = matchA[slotA];
+    const playerB = matchB[slotB];
+
+    matchA[slotA] = playerB;
+    matchB[slotB] = playerA;
+
+    [matchA, matchB].forEach(m => {
+        m.forced = true;
+        m.winner = null;
+        m.p1Wins = 0;
+        m.p2Wins = 0;
+        m.draws = 0;
+    });
+
+    normalizeRoundMatchesAfterSwap(roundIdx);
+    selectedSwapSlot = null;
+    saveState();
+    renderAll();
+}
+
+function handleSeatClick(roundIdx, matchId, slot) {
+    if (isRoundLocked(roundIdx)) return;
+
+    if (!selectedSwapSlot || selectedSwapSlot.roundIdx !== roundIdx) {
+        selectedSwapSlot = { roundIdx, matchId, slot };
+        renderSwissRounds();
+        return;
+    }
+
+    if (selectedSwapSlot.matchId === matchId && selectedSwapSlot.slot === slot) {
+        selectedSwapSlot = null;
+        renderSwissRounds();
+        return;
+    }
+
+    executeSeatSwap(roundIdx, selectedSwapSlot.matchId, selectedSwapSlot.slot, matchId, slot);
+}
+
+function cancelSeatSwap() {
+    selectedSwapSlot = null;
+    renderSwissRounds();
+}
+
+function applyDirectForcedPairing() {
+    const activeIdx = state.currentRoundIndex;
+    if (isRoundLocked(activeIdx)) return;
+
+    const roundObj = state.swissRounds[activeIdx];
+    if (!roundObj) return;
+
+    const p1Id = document.getElementById('force-p1-select')?.value;
+    const p2Val = document.getElementById('force-p2-select')?.value;
+
+    if (!p1Id || !p2Val) {
+        openModal("Select Summoners", "Please select both Summoner 1 and an Opponent (or BYE) to force a pairing.", null, true);
+        return;
+    }
+    if (p1Id === p2Val) {
+        openModal("Invalid Pairing", "A Summoner cannot be paired against themselves.", null, true);
+        return;
+    }
+
+    const loc1 = findPlayerSlotInRound(roundObj, p1Id);
+    if (!loc1) return;
+
+    if (p2Val === 'BYE') {
+        const byeMatch = roundObj.matches.find(m => m.bye || m.p2 === null);
+        if (!byeMatch) {
+            openModal("No BYE Table Available", "This round has an even number of active Summoners, so there is no BYE slot.", null, true);
+            return;
+        }
+        executeSeatSwap(activeIdx, loc1.match.id, loc1.slot, byeMatch.id, 'p1');
+        return;
+    }
+
+    const loc2 = findPlayerSlotInRound(roundObj, p2Val);
+    if (!loc2) return;
+
+    if (loc1.match.id === loc2.match.id) {
+        loc1.match.forced = true;
+        saveState();
+        renderAll();
+        return;
+    }
+
+    const targetSlotAtTable1 = loc1.slot === 'p1' ? 'p2' : 'p1';
+    executeSeatSwap(activeIdx, loc1.match.id, targetSlotAtTable1, loc2.match.id, loc2.slot);
+    loc1.match.forced = true;
+    saveState();
+    renderAll();
+}
+
+function addLockedPairToList() {
+    const activeIdx = state.currentRoundIndex;
+    if (isRoundLocked(activeIdx)) return;
+    const roundObj = state.swissRounds[activeIdx];
+    if (!roundObj) return;
+
+    const p1Id = document.getElementById('force-p1-select')?.value;
+    const p2Val = document.getElementById('force-p2-select')?.value;
+
+    if (!p1Id || !p2Val || p1Id === p2Val) {
+        openModal("Invalid Selection", "Please choose two distinct Summoners (or a Summoner and BYE) to pin.", null, true);
+        return;
+    }
+
+    if (!roundObj.forcedSpecs) roundObj.forcedSpecs = [];
+
+    roundObj.forcedSpecs = roundObj.forcedSpecs.filter(s =>
+        s.p1 !== p1Id && s.p2 !== p1Id && (p2Val === 'BYE' ? s.p2 !== 'BYE' : (s.p1 !== p2Val && s.p2 !== p2Val))
+    );
+
+    roundObj.forcedSpecs.push({ p1: p1Id, p2: p2Val });
+
+    roundObj.matches = createPairingsForRound(activeIdx, roundObj.forcedSpecs);
+    roundObj.stale = false;
+    saveState();
+    renderAll();
+}
+
+function removePinnedPair(idx) {
+    const activeIdx = state.currentRoundIndex;
+    if (isRoundLocked(activeIdx)) return;
+    const roundObj = state.swissRounds[activeIdx];
+    if (!roundObj || !roundObj.forcedSpecs) return;
+
+    roundObj.forcedSpecs.splice(idx, 1);
+    roundObj.matches = createPairingsForRound(activeIdx, roundObj.forcedSpecs);
+    saveState();
+    renderAll();
+}
+
+function clearPinnedPairs() {
+    const activeIdx = state.currentRoundIndex;
+    if (isRoundLocked(activeIdx)) return;
+    const roundObj = state.swissRounds[activeIdx];
+    if (!roundObj) return;
+
+    roundObj.forcedSpecs = [];
+    roundObj.matches = createPairingsForRound(activeIdx, []);
+    saveState();
+    renderAll();
+}
+
+function renderPinnedPairsList() {
+    const container = document.getElementById('pinned-pairs-container');
+    const listEl = document.getElementById('pinned-pairs-list');
+    if (!container || !listEl) return;
+
+    const roundObj = state.swissRounds[state.currentRoundIndex];
+    const specs = roundObj && roundObj.forcedSpecs ? roundObj.forcedSpecs : [];
+
+    if (specs.length === 0) {
+        container.classList.add('hidden');
+        listEl.innerHTML = '';
+        return;
+    }
+
+    const playerMap = new Map(state.players.map(p => [p.id, p]));
+    container.classList.remove('hidden');
+    listEl.innerHTML = specs.map((spec, idx) => {
+        const p1 = playerMap.get(spec.p1);
+        const p2Name = spec.p2 === 'BYE' ? 'BYE' : (playerMap.get(spec.p2)?.name || 'Unknown');
+        return `
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-indigo-950/90 border border-indigo-600/50 text-xs text-indigo-200">
+                <span>📌 <strong>${escapeHtml(p1 ? p1.name : 'Unknown')}</strong> vs <strong>${escapeHtml(p2Name)}</strong></span>
+                <button onclick="removePinnedPair(${idx})" class="text-indigo-400 hover:text-rose-400 font-bold cursor-pointer" title="Remove pin">✕</button>
+            </span>
+        `;
+    }).join('');
+}
+
+// ============================================================================
+// SWISS ROUND WORKFLOW & RENDERING
+// ============================================================================
 
 function generateSwissPairings() {
     if (state.players.length < 2) return;
@@ -381,8 +790,9 @@ function generateSwissPairings() {
         state.swissRounds = [];
         state.currentRoundIndex = 0;
         state.eliminationBracket = null;
-        const pairings = createPairingsForRound(0);
-        state.swissRounds.push({ round: 1, matches: pairings, stale: false });
+        selectedSwapSlot = null;
+        const pairings = createPairingsForRound(0, []);
+        state.swissRounds.push({ round: 1, matches: pairings, stale: false, forcedSpecs: [] });
         saveState();
         renderAll();
         switchTab('swiss');
@@ -415,33 +825,39 @@ function nextSwissRound() {
     }
 
     const nextIdx = state.swissRounds.length;
-    const pairings = createPairingsForRound(nextIdx);
+    const pairings = createPairingsForRound(nextIdx, []);
     state.swissRounds.push({
         round: nextIdx + 1,
         matches: pairings,
-        stale: false
+        stale: false,
+        forcedSpecs: []
     });
     state.currentRoundIndex = state.swissRounds.length - 1;
+    selectedSwapSlot = null;
     saveState();
     renderAll();
 }
 
 function promptRepairRound(targetIdx = state.currentRoundIndex) {
     if (targetIdx < 0 || isRoundLocked(targetIdx)) return;
-    const roundNum = state.swissRounds[targetIdx].round;
+    const roundObj = state.swissRounds[targetIdx];
+    const roundNum = roundObj.round;
+    const pinnedCount = roundObj.forcedSpecs ? roundObj.forcedSpecs.length : 0;
 
     const description = targetIdx === 0
-        ? `Randomize and regenerate fresh pairings for Round 1? Any scores entered for Round 1 will be reset.`
-        : `Recalculate standings from Rounds 1–${roundNum - 1} and randomly regenerate valid pairings within each score bracket for Round ${roundNum}? Current Round ${roundNum} match scores will be reset.`;
+        ? `Randomize and regenerate fresh pairings for Round 1${pinnedCount > 0 ? ` (keeping ${pinnedCount} pinned matchup(s))` : ''}? Any scores entered for Round 1 will be reset.`
+        : `Recalculate standings from Rounds 1–${roundNum - 1} and randomly regenerate valid pairings within each score bracket for Round ${roundNum}${pinnedCount > 0 ? ` (keeping ${pinnedCount} pinned matchup(s))` : ''}? Current Round ${roundNum} match scores will be reset.`;
 
     openModal(
         `Re-Pair & Randomize Round ${roundNum}`,
         description,
         () => {
-            const newPairings = createPairingsForRound(targetIdx);
+            const specs = roundObj.forcedSpecs || [];
+            const newPairings = createPairingsForRound(targetIdx, specs);
             state.swissRounds[targetIdx].matches = newPairings;
             state.swissRounds[targetIdx].stale = false;
             state.currentRoundIndex = targetIdx;
+            selectedSwapSlot = null;
             saveState();
             renderAll();
         }
@@ -489,11 +905,15 @@ function renderSwissRounds() {
     const container = document.getElementById('swiss-rounds-container');
     const nextRoundBtn = document.getElementById('next-round-btn');
     const repairRoundBtn = document.getElementById('repair-round-btn');
+    const forcePairBtn = document.getElementById('force-pair-btn');
+    const forcePanel = document.getElementById('force-pairings-panel');
 
     if (state.swissRounds.length === 0) {
         roundTabsContainer.innerHTML = '';
         bannersContainer.innerHTML = '';
         repairRoundBtn.classList.add('hidden');
+        forcePairBtn.classList.add('hidden');
+        if (forcePanel) forcePanel.classList.add('hidden');
         container.innerHTML = `
             <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-12 text-center text-slate-500">
                 <p class="mb-4">No Swiss rounds generated yet.</p>
@@ -514,15 +934,20 @@ function renderSwissRounds() {
     if (!locked) {
         repairRoundBtn.classList.remove('hidden');
         repairRoundBtn.textContent = `↻ Re-Pair Round ${activeRound.round}`;
+        forcePairBtn.classList.remove('hidden');
+        populateForcePairSelects();
+        renderPinnedPairsList();
     } else {
         repairRoundBtn.classList.add('hidden');
+        forcePairBtn.classList.add('hidden');
+        if (forcePanel) forcePanel.classList.add('hidden');
     }
 
     roundTabsContainer.innerHTML = state.swissRounds.map((r, idx) => {
         const rLocked = isRoundLocked(idx);
         const isCurrent = idx === activeIdx;
         return `
-            <button onclick="state.currentRoundIndex = ${idx}; renderSwissRounds();" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${isCurrent ? 'bg-amber-500 text-slate-950 shadow' : 'text-slate-400 hover:text-slate-200'}">
+            <button onclick="state.currentRoundIndex = ${idx}; selectedSwapSlot = null; renderSwissRounds();" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${isCurrent ? 'bg-amber-500 text-slate-950 shadow' : 'text-slate-400 hover:text-slate-200'}">
                 <span>Round ${r.round}</span>
                 ${rLocked ? '<span title="Locked (2+ rounds passed)">🔒</span>' : ''}
                 ${r.stale ? '<span title="Previous round results changed — Re-pair recommended" class="text-amber-300">⚠️</span>' : ''}
@@ -530,14 +955,32 @@ function renderSwissRounds() {
         `;
     }).join('');
 
+    const playerMap = new Map(state.players.map(p => [p.id, p]));
+
     let bannersHtml = '';
     if (locked) {
         bannersHtml += `
             <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 flex items-center justify-between text-xs text-slate-300">
                 <div class="flex items-center gap-2.5">
                     <span class="text-base">🔒</span>
-                    <span><strong>Round ${activeRound.round} is locked.</strong> Results cannot be modified because 2 or more subsequent rounds have already started.</span>
+                    <span><strong>Round ${activeRound.round} is locked.</strong> Results and pairings cannot be modified because 2 or more subsequent rounds have already started.</span>
                 </div>
+            </div>
+        `;
+    }
+    if (selectedSwapSlot && selectedSwapSlot.roundIdx === activeIdx && !locked) {
+        const selMatch = activeRound.matches.find(m => m.id === selectedSwapSlot.matchId);
+        const selPlayerId = selMatch ? selMatch[selectedSwapSlot.slot] : null;
+        const selName = selPlayerId ? (playerMap.get(selPlayerId)?.name || 'Summoner') : 'BYE Slot';
+        bannersHtml += `
+            <div class="bg-indigo-950/80 border border-indigo-500/60 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-indigo-200">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-base">⇄</span>
+                    <span><strong>Swap Mode Active:</strong> Selected <strong>${escapeHtml(selName)}</strong>. Click any other Summoner (or BYE slot) on the tables below to swap their seats immediately.</span>
+                </div>
+                <button onclick="cancelSeatSwap()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg cursor-pointer shrink-0">
+                    Cancel Swap
+                </button>
             </div>
         `;
     }
@@ -558,7 +1001,6 @@ function renderSwissRounds() {
 
     const enteringStandings = calculateStandingsData(activeIdx);
     const statMap = new Map(enteringStandings.map(s => [s.player.id, s]));
-    const playerMap = new Map(state.players.map(p => [p.id, p]));
 
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -571,11 +1013,15 @@ function renderSwissRounds() {
                 const currentScore = isComplete ? `${m.p1Wins}-${m.p2Wins}` : null;
                 const isFloat = s1 && s2 && s1.points !== s2.points;
 
+                const isP1Selected = selectedSwapSlot && selectedSwapSlot.roundIdx === activeIdx && selectedSwapSlot.matchId === m.id && selectedSwapSlot.slot === 'p1';
+                const isP2Selected = selectedSwapSlot && selectedSwapSlot.roundIdx === activeIdx && selectedSwapSlot.matchId === m.id && selectedSwapSlot.slot === 'p2';
+
                 return `
                     <div class="bg-slate-900/60 border ${isComplete ? 'border-emerald-500/30' : 'border-slate-800'} rounded-2xl p-5 shadow-lg backdrop-blur-sm relative">
                         <div class="flex justify-between items-center mb-3">
                             <div class="flex items-center gap-2">
                                 <span class="text-xs font-mono uppercase tracking-wider text-slate-400">Table #${mIdx + 1}</span>
+                                ${m.forced ? '<span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold" title="Manually forced or swapped pairing">📌 Forced</span>' : ''}
                                 ${isFloat ? '<span class="text-[10px] px-2 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-700/50" title="Pair down/up between adjacent point groups">Float Match</span>' : ''}
                             </div>
                             <div class="flex items-center gap-2">
@@ -588,33 +1034,39 @@ function renderSwissRounds() {
 
                         <div class="space-y-3">
                             <!-- Player 1 -->
-                            <div class="flex justify-between items-center p-3 rounded-xl bg-slate-950/60 border ${m.winner === m.p1 ? 'border-amber-500/60 bg-amber-500/5' : 'border-slate-800/80'}">
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-bold text-slate-200">${p1 ? escapeHtml(p1.name) : 'Unknown'}</span>
-                                        ${s1 ? `<span class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-amber-400">${s1.points} pts (${s1.wins}-${s1.losses}-${s1.draws})</span>` : ''}
+                            <div class="flex justify-between items-center p-3 rounded-xl bg-slate-950/60 border transition-all ${isP1Selected ? 'border-indigo-400 ring-2 ring-indigo-500/40 bg-indigo-950/30' : m.winner === m.p1 ? 'border-amber-500/60 bg-amber-500/5' : 'border-slate-800/80'}">
+                                <div class="flex items-center gap-2 min-w-0 pr-2">
+                                    ${!locked ? `<button onclick="handleSeatClick(${activeIdx}, '${m.id}', 'p1')" title="Click to swap this Summoner with another seat" class="px-1.5 py-1 rounded bg-slate-900 hover:bg-indigo-900/80 text-slate-400 hover:text-indigo-200 border border-slate-800 text-xs cursor-pointer shrink-0 transition-colors">⇄</button>` : ''}
+                                    <div class="truncate">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-slate-200 truncate">${p1 ? escapeHtml(p1.name) : 'Unknown'}</span>
+                                            ${s1 ? `<span class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-amber-400 shrink-0">${s1.points} pts (${s1.wins}-${s1.losses}-${s1.draws})</span>` : ''}
+                                        </div>
+                                        <div class="text-xs text-amber-400/90 mt-0.5 truncate">${p1 ? escapeHtml(formatDeckLabel(p1.deck)) : ''}</div>
                                     </div>
-                                    <div class="text-xs text-amber-400/90 mt-0.5">${p1 ? escapeHtml(p1.deck) : ''}</div>
                                 </div>
                                 ${!m.bye ? `
-                                    <div class="flex gap-1.5">
+                                    <div class="flex gap-1.5 shrink-0">
                                         <button ${locked ? 'disabled' : ''} onclick="setMatchResult(${activeIdx}, '${m.id}', '2-0')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '2-0' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">2-0</button>
                                         <button ${locked ? 'disabled' : ''} onclick="setMatchResult(${activeIdx}, '${m.id}', '2-1')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '2-1' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">2-1</button>
                                     </div>
-                                ` : `<span class="text-xs font-bold text-emerald-400 px-2.5 py-1 bg-emerald-950/50 rounded-lg border border-emerald-800/40">2-0 (BYE)</span>`}
+                                ` : `<span class="text-xs font-bold text-emerald-400 px-2.5 py-1 bg-emerald-950/50 rounded-lg border border-emerald-800/40 shrink-0">2-0 (BYE)</span>`}
                             </div>
 
                             <!-- Player 2 or BYE -->
                             ${p2 ? `
-                                <div class="flex justify-between items-center p-3 rounded-xl bg-slate-950/60 border ${m.winner === m.p2 ? 'border-amber-500/60 bg-amber-500/5' : 'border-slate-800/80'}">
-                                    <div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-bold text-slate-200">${escapeHtml(p2.name)}</span>
-                                            ${s2 ? `<span class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-amber-400">${s2.points} pts (${s2.wins}-${s2.losses}-${s2.draws})</span>` : ''}
+                                <div class="flex justify-between items-center p-3 rounded-xl bg-slate-950/60 border transition-all ${isP2Selected ? 'border-indigo-400 ring-2 ring-indigo-500/40 bg-indigo-950/30' : m.winner === m.p2 ? 'border-amber-500/60 bg-amber-500/5' : 'border-slate-800/80'}">
+                                    <div class="flex items-center gap-2 min-w-0 pr-2">
+                                        ${!locked ? `<button onclick="handleSeatClick(${activeIdx}, '${m.id}', 'p2')" title="Click to swap this Summoner with another seat" class="px-1.5 py-1 rounded bg-slate-900 hover:bg-indigo-900/80 text-slate-400 hover:text-indigo-200 border border-slate-800 text-xs cursor-pointer shrink-0 transition-colors">⇄</button>` : ''}
+                                        <div class="truncate">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-slate-200 truncate">${escapeHtml(p2.name)}</span>
+                                                ${s2 ? `<span class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-amber-400 shrink-0">${s2.points} pts (${s2.wins}-${s2.losses}-${s2.draws})</span>` : ''}
+                                            </div>
+                                            <div class="text-xs text-amber-400/90 mt-0.5 truncate">${escapeHtml(formatDeckLabel(p2.deck))}</div>
                                         </div>
-                                        <div class="text-xs text-amber-400/90 mt-0.5">${escapeHtml(p2.deck)}</div>
                                     </div>
-                                    <div class="flex gap-1.5">
+                                    <div class="flex gap-1.5 shrink-0">
                                         <button ${locked ? 'disabled' : ''} onclick="setMatchResult(${activeIdx}, '${m.id}', '1-2')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '1-2' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">2-1</button>
                                         <button ${locked ? 'disabled' : ''} onclick="setMatchResult(${activeIdx}, '${m.id}', '0-2')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '0-2' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">2-0</button>
                                     </div>
@@ -756,7 +1208,7 @@ function calculateStandings() {
         <tr class="hover:bg-slate-900/50 transition-colors">
             <td class="p-3.5 text-center font-mono font-bold text-amber-400">${idx + 1}</td>
             <td class="p-3.5 font-semibold text-slate-200">${escapeHtml(s.player.name)}</td>
-            <td class="p-3.5 text-amber-400/90">${escapeHtml(s.player.deck)}</td>
+            <td class="p-3.5 text-amber-400/90">${escapeHtml(formatDeckLabel(s.player.deck))}</td>
             <td class="p-3.5 text-center font-mono">${s.wins}-${s.losses}-${s.draws}</td>
             <td class="p-3.5 text-center font-mono font-bold text-amber-400">${s.points}</td>
             <td class="p-3.5 text-center font-mono text-slate-400">${(s.omw * 100).toFixed(1)}%</td>
@@ -783,9 +1235,10 @@ function calculateMetaStats() {
     }
 
     state.players.forEach(p => {
-        if (!legendMap.has(p.deck)) {
-            legendMap.set(p.deck, {
-                legend: p.deck,
+        const deckKey = formatDeckLabel(p.deck);
+        if (!legendMap.has(deckKey)) {
+            legendMap.set(deckKey, {
+                legend: deckKey,
                 pilots: 0,
                 pilotNames: [],
                 topCutCount: 0,
@@ -798,7 +1251,7 @@ function calculateMetaStats() {
                 gameLosses: 0
             });
         }
-        const entry = legendMap.get(p.deck);
+        const entry = legendMap.get(deckKey);
         entry.pilots++;
         entry.pilotNames.push(p.name);
         if (topCutPlayerIds.has(p.id)) {
@@ -813,8 +1266,8 @@ function calculateMetaStats() {
             const p2 = m.p2 ? playerMap.get(m.p2) : null;
             if (!p1 || !p2) return;
 
-            const L1 = legendMap.get(p1.deck);
-            const L2 = legendMap.get(p2.deck);
+            const L1 = legendMap.get(formatDeckLabel(p1.deck));
+            const L2 = legendMap.get(formatDeckLabel(p2.deck));
             const games = m.p1Wins + m.p2Wins;
 
             if (L1) {
@@ -981,7 +1434,7 @@ function renderMetaBreakdown() {
 // HEAD-TO-HEAD WINRATE MATRIX ENGINE
 // ============================================================================
 function shortLegendName(fullName) {
-    if (!fullName) return '';
+    if (!fullName || !fullName.trim()) return 'Unassigned';
     return fullName.split(',')[0].trim();
 }
 
@@ -1000,17 +1453,16 @@ function renderWinrateMatrix() {
     const playerMap = new Map(state.players.map(p => [p.id, p]));
     const legendPilotCounts = new Map();
     state.players.forEach(p => {
-        legendPilotCounts.set(p.deck, (legendPilotCounts.get(p.deck) || 0) + 1);
+        const key = formatDeckLabel(p.deck);
+        legendPilotCounts.set(key, (legendPilotCounts.get(key) || 0) + 1);
     });
 
-    // Order active Legends by pilot count descending, then alphabetically
     const activeLegends = Array.from(legendPilotCounts.keys()).sort((a, b) => {
         const countDiff = legendPilotCounts.get(b) - legendPilotCounts.get(a);
         if (countDiff !== 0) return countDiff;
         return a.localeCompare(b);
     });
 
-    // Initialize 2D matrix map: matrix[rowLegend][colLegend]
     const matrix = {};
     activeLegends.forEach(l1 => {
         matrix[l1] = {};
@@ -1027,7 +1479,6 @@ function renderWinrateMatrix() {
         });
     });
 
-    // Aggregate Swiss matches (excluding BYEs)
     state.swissRounds.forEach(r => {
         r.matches.forEach(m => {
             if (m.winner === null || m.bye) return;
@@ -1035,11 +1486,10 @@ function renderWinrateMatrix() {
             const p2 = m.p2 ? playerMap.get(m.p2) : null;
             if (!p1 || !p2) return;
 
-            const d1 = p1.deck;
-            const d2 = p2.deck;
+            const d1 = formatDeckLabel(p1.deck);
+            const d2 = formatDeckLabel(p2.deck);
             if (!matrix[d1] || !matrix[d2]) return;
 
-            // Mirror matches
             if (d1 === d2) {
                 const cell = matrix[d1][d2];
                 cell.matches++;
@@ -1083,13 +1533,12 @@ function renderWinrateMatrix() {
         });
     });
 
-    // Aggregate Single Elimination bracket matches if enabled
     if (includeElim && state.eliminationBracket && state.eliminationBracket.rounds) {
         state.eliminationBracket.rounds.forEach(rMatches => {
             rMatches.forEach(m => {
                 if (!m.winner || !m.p1 || !m.p2 || !m.p1.id || !m.p2.id) return;
-                const d1 = m.p1.deck;
-                const d2 = m.p2.deck;
+                const d1 = formatDeckLabel(m.p1.deck);
+                const d2 = formatDeckLabel(m.p2.deck);
                 if (!matrix[d1] || !matrix[d2]) return;
 
                 if (d1 === d2) {
@@ -1135,7 +1584,6 @@ function renderWinrateMatrix() {
             </thead>
             <tbody class="divide-y divide-slate-900">
                 ${activeLegends.map(rowLegend => {
-                    // Calculate overall non-mirror record for this row Legend
                     let totalM = 0, totalMW = 0, totalML = 0, totalMD = 0;
                     let totalG = 0, totalGW = 0, totalGL = 0;
 
@@ -1219,93 +1667,6 @@ function renderWinrateMatrix() {
             </tbody>
         </table>
     `;
-}
-
-// ============================================================================
-// AUTOMATED SWISS ENGINE DIAGNOSTIC & VERIFICATION SUITE
-// ============================================================================
-function runSwissDiagnosticTests() {
-    const logs = [];
-
-    const simPlayers8 = Array.from({ length: 8 }, (_, i) => ({
-        id: `sim8_${i + 1}`,
-        name: `Player ${i + 1}`,
-        deck: RIFTBOUND_LEGENDS[i],
-        active: true
-    }));
-    const simRounds8 = [];
-    let rematches8 = 0;
-    let bottomPairedCorrectly = true;
-    const seenPairs8 = new Set();
-
-    for (let r = 0; r < 4; r++) {
-        const matches = buildSwissPairings(simPlayers8, simRounds8, r);
-        matches.forEach(m => {
-            const key = [m.p1, m.p2].sort().join('--');
-            if (seenPairs8.has(key)) rematches8++;
-            seenPairs8.add(key);
-
-            m.winner = m.p1;
-            m.p1Wins = 2;
-            m.p2Wins = 0;
-        });
-
-        if (r === 1 || r === 2) {
-            const bottomMatch = matches[matches.length - 1];
-            if (bottomMatch.p1Points !== 0 || bottomMatch.p2Points !== 0) {
-                bottomPairedCorrectly = false;
-            }
-        }
-        simRounds8.push({ round: r + 1, matches });
-    }
-
-    logs.push(`<div class="p-3 rounded-xl bg-slate-950 border border-slate-800 mb-2">
-        <div class="font-bold text-emerald-400">✓ Test 1: 8-Player 4-Round Stress Test</div>
-        <div class="text-xs text-slate-300 mt-1">• Total Rematches across 16 matches: <strong>${rematches8}</strong> (Expected: 0)<br>• Lowest-Point (0-pt) Players Paired Together in R2 &amp; R3: <strong>${bottomPairedCorrectly ? 'YES (100%)' : 'NO'}</strong></div>
-    </div>`);
-
-    const r2Signatures = new Set();
-    for (let trial = 0; trial < 15; trial++) {
-        const r2Trial = buildSwissPairings(simPlayers8, [simRounds8[0]], 1);
-        const sig = r2Trial.map(m => [m.p1, m.p2].sort().join('-')).sort().join('|');
-        r2Signatures.add(sig);
-    }
-
-    logs.push(`<div class="p-3 rounded-xl bg-slate-950 border border-slate-800 mb-2">
-        <div class="font-bold text-emerald-400">✓ Test 2: Re-Pair Within-Bracket Randomization</div>
-        <div class="text-xs text-slate-300 mt-1">• Ran 15 Re-Pair trials on Round 2 (four 3-pt players, four 0-pt players).<br>• Distinct Valid Bracket Pairings Generated: <strong>${r2Signatures.size}</strong> (Confirms Re-Pair actively shuffles pairs within each point group).</div>
-    </div>`);
-
-    const oddPlayers = Array.from({ length: 7 }, (_, i) => ({
-        id: `odd_${i + 1}`,
-        name: `Player ${i + 1}`,
-        deck: RIFTBOUND_LEGENDS[i],
-        active: true
-    }));
-    const oddRounds = [];
-    const byeRecipients = [];
-    for (let r = 0; r < 3; r++) {
-        const matches = buildSwissPairings(oddPlayers, oddRounds, r);
-        const byeM = matches.find(m => m.bye);
-        if (byeM) byeRecipients.push(byeM.p1);
-        matches.forEach(m => {
-            if (!m.bye) { m.winner = m.p1; m.p1Wins = 2; m.p2Wins = 0; }
-        });
-        oddRounds.push({ round: r + 1, matches });
-    }
-    const uniqueByes = new Set(byeRecipients).size;
-
-    logs.push(`<div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
-        <div class="font-bold text-emerald-400">✓ Test 3: 7-Player Odd Roster BYE Rotation</div>
-        <div class="text-xs text-slate-300 mt-1">• 3 Rounds simulated with 7 Summoners.<br>• Unique Lowest-Standings BYE Recipients: <strong>${uniqueByes} / 3</strong> (Zero duplicate BYEs, assigned strictly to lowest-point eligible player).</div>
-    </div>`);
-
-    openModal(
-        "Swiss Pairing Engine Verification Report",
-        logs.join(''),
-        null,
-        true
-    );
 }
 
 // Single Elimination Bracket Engine
@@ -1452,7 +1813,7 @@ function renderEliminationBracket() {
             <div class="mb-8 p-6 rounded-2xl bg-gradient-to-r from-amber-950/60 via-amber-900/40 to-amber-950/60 border border-amber-500/50 text-center shadow-xl">
                 <div class="text-xs uppercase tracking-widest text-amber-400 font-bold mb-1">👑 Riftbound Tournament Champion</div>
                 <div class="text-2xl font-black font-arcane text-amber-200">${escapeHtml(champion.name)}</div>
-                <div class="text-sm text-amber-400/90 mt-0.5">${escapeHtml(champion.deck)}</div>
+                <div class="text-sm text-amber-400/90 mt-0.5">${escapeHtml(formatDeckLabel(champion.deck))}</div>
             </div>
         ` : ''}
         <div class="flex flex-col lg:flex-row gap-8 justify-start items-stretch min-w-max px-2">
@@ -1475,7 +1836,7 @@ function renderEliminationBracket() {
                                             <div class="text-xs font-bold text-slate-200 truncate">
                                                 ${p1 ? `<span class="text-slate-500 font-mono mr-1">#${p1.seed || '-'}</span>${escapeHtml(p1.name)}` : '<span class="text-slate-600 italic">TBD</span>'}
                                             </div>
-                                            <div class="text-[11px] text-amber-400/80 truncate">${p1 && p1.deck ? escapeHtml(p1.deck) : ''}</div>
+                                            <div class="text-[11px] text-amber-400/80 truncate">${p1 && p1.id ? escapeHtml(formatDeckLabel(p1.deck)) : ''}</div>
                                         </div>
                                         ${p1Won ? '<span class="text-amber-400 text-xs font-bold">✓</span>' : ''}
                                     </div>
@@ -1485,7 +1846,7 @@ function renderEliminationBracket() {
                                             <div class="text-xs font-bold text-slate-200 truncate">
                                                 ${p2 ? `<span class="text-slate-500 font-mono mr-1">#${p2.seed || '-'}</span>${escapeHtml(p2.name)}` : '<span class="text-slate-600 italic">TBD</span>'}
                                             </div>
-                                            <div class="text-[11px] text-amber-400/80 truncate">${p2 && p2.deck ? escapeHtml(p2.deck) : ''}</div>
+                                            <div class="text-[11px] text-amber-400/80 truncate">${p2 && p2.id ? escapeHtml(formatDeckLabel(p2.deck)) : ''}</div>
                                         </div>
                                         ${p2Won ? '<span class="text-amber-400 text-xs font-bold">✓</span>' : ''}
                                     </div>
@@ -1506,65 +1867,3 @@ function escapeHtml(str) {
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
 }
-
-// Official 58 Legends in Riftbound TCG (Source: riftwatch.gg/legends)
-const RIFTBOUND_LEGENDS = [
-    "Ahri, Nine-Tailed Fox",
-    "Akali, Rogue Assassin",
-    "Ambessa, Matriarch of War",
-    "Annie, Dark Child",
-    "Azir, Emperor of the Sands",
-    "Darius, Hand of Noxus",
-    "Diana, Scorn of the Moon",
-    "Draven, Glorious Executioner",
-    "Ekko, Boy Who Shattered Time",
-    "Evelynn, Agony's Embrace",
-    "Ezreal, Prodigal Explorer",
-    "Fiora, Grand Duelist",
-    "Garen, Might of Demacia",
-    "Irelia, Blade Dancer",
-    "Ivern, Green Father",
-    "Jarvan IV, Exemplar of Demacia",
-    "Jax, Grandmaster at Arms",
-    "Jayce, Defender of Tomorrow",
-    "Jhin, Virtuoso",
-    "Jinx, Loose Cannon",
-    "K'Sante, Pride of Nazumah",
-    "Kai'Sa, Daughter of the Void",
-    "Kennen, Heart of the Tempest",
-    "Kha'Zix, Voidreaver",
-    "LeBlanc, Deceiver",
-    "Lee Sin, Blind Monk",
-    "Leona, Radiant Dawn",
-    "Lillia, Bashful Bloom",
-    "Lucian, Purifier",
-    "Lux, Lady of Luminosity",
-    "Master Yi, Wuju Bladesman",
-    "Master Yi, Wuju Master",
-    "Mel, Soul's Reflection",
-    "Miss Fortune, Bounty Hunter",
-    "Mordekaiser, Iron Revenant",
-    "Nasus, Curator of the Sands",
-    "Orianna, Lady of Clockwork",
-    "Ornn, Fire Below the Mountain",
-    "Poppy, Keeper of the Hammer",
-    "Pyke, Bloodharbor Ripper",
-    "Rek'Sai, Void Burrower",
-    "Renata Glasc, Chem-Baroness",
-    "Renekton, Butcher of the Sands",
-    "Rengar, Pridestalker",
-    "Riven, The Exile",
-    "Rumble, Mechanized Menace",
-    "Seraphine, Starry-Eyed Songstress",
-    "Sett, The Boss",
-    "Shen, Eye of Twilight",
-    "Sivir, Battle Mistress",
-    "Teemo, Swift Scout",
-    "Vex, Gloomist",
-    "Vi, Piltover Enforcer",
-    "Viktor, Herald of the Arcane",
-    "Volibear, Relentless Storm",
-    "Yasuo, Unforgiven",
-    "Zed, Master of Shadows",
-    "Ziggs, Hexplosives Expert"
-];
