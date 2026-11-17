@@ -80,6 +80,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function populateLegendDropdown() {
     const select = document.getElementById('p-deck');
+    if (!select) return;
     select.innerHTML = '<option value="" selected>No Legend Selected (Optional)</option>';
     RIFTBOUND_LEGENDS.forEach(legend => {
         const opt = document.createElement('option');
@@ -153,7 +154,7 @@ function closeModal() {
 function promptResetTournament() {
     openModal(
         "Reset Entire Tournament",
-        "Are you sure you want to clear all registered summoners, Swiss rounds, standings, and playoff brackets?",
+        "Are you sure you want to clear all registered players, Swiss rounds, standings, and playoff brackets?",
         () => {
             state = { players: [], swissRounds: [], currentRoundIndex: 0, eliminationBracket: null };
             selectedSwapSlot = null;
@@ -162,6 +163,93 @@ function promptResetTournament() {
             switchTab('players');
         }
     );
+}
+
+// ============================================================================
+// SNAPSHOT DOWNLOAD & LOAD TOURNAMENT
+// ============================================================================
+
+function downloadTournamentSnapshot() {
+    const snapshot = {
+        app: "Riftbound Tournament Hub",
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        state: {
+            players: state.players || [],
+            swissRounds: state.swissRounds || [],
+            currentRoundIndex: state.currentRoundIndex || 0,
+            eliminationBracket: state.eliminationBracket || null
+        }
+    };
+
+    const jsonString = JSON.stringify(snapshot, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const dateStamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `riftbound-tournament-${dateStamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function loadTournamentSnapshot(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const parsed = JSON.parse(e.target.result);
+            const loadedState = parsed && parsed.state ? parsed.state : parsed;
+
+            if (!loadedState || !Array.isArray(loadedState.players) || !Array.isArray(loadedState.swissRounds)) {
+                throw new Error("Invalid tournament snapshot structure.");
+            }
+
+            state = {
+                players: loadedState.players.map(p => ({
+                    id: String(p.id || 'p_' + Math.random().toString(36).substring(2, 11)),
+                    name: String(p.name || 'Unknown'),
+                    deck: matchOfficialLegend(p.deck) || (p.deck ? String(p.deck) : ''),
+                    active: p.active !== false
+                })),
+                swissRounds: loadedState.swissRounds,
+                currentRoundIndex: typeof loadedState.currentRoundIndex === 'number' ? loadedState.currentRoundIndex : 0,
+                eliminationBracket: loadedState.eliminationBracket || null
+            };
+
+            if (state.eliminationBracket && state.eliminationBracket.cutSize) {
+                const cutSelect = document.getElementById('cut-size-select');
+                if (cutSelect) cutSelect.value = String(state.eliminationBracket.cutSize);
+            }
+
+            selectedSwapSlot = null;
+            saveState();
+            renderAll();
+
+            openModal(
+                "Tournament Snapshot Loaded",
+                `Successfully restored <strong>${state.players.length}</strong> Player(s), <strong>${state.swissRounds.length}</strong> Swiss Round(s), and ${state.eliminationBracket ? 'the Elimination Bracket' : 'no Elimination Bracket'}.`,
+                null,
+                true
+            );
+        } catch (err) {
+            openModal(
+                "Failed to Load Tournament",
+                `The selected file could not be parsed as a valid Riftbound Tournament snapshot.<br><br><span class="text-xs text-rose-400 font-mono">${escapeHtml(err.message)}</span>`,
+                null,
+                true
+            );
+        } finally {
+            event.target.value = '';
+        }
+    };
+
+    reader.readAsText(file);
 }
 
 // Navigation
@@ -236,7 +324,7 @@ function removePlayer(id) {
 
 function matchOfficialLegend(rawLegendText) {
     if (!rawLegendText) return '';
-    const cleaned = rawLegendText.trim();
+    const cleaned = String(rawLegendText).trim();
     if (!cleaned) return '';
 
     const lower = cleaned.toLowerCase();
@@ -305,7 +393,7 @@ function importPlayersFromTxt(event) {
         if (unmatchedLegends.length > 0) {
             openModal(
                 "Import Completed with Unrecognized Legends",
-                `<p class="mb-2">Imported <strong>${addedCount}</strong> Summoner(s).</p>
+                `<p class="mb-2">Imported <strong>${addedCount}</strong> Player(s).</p>
                  <p class="text-xs text-amber-300 mb-2">The following Legend names did not match the 58 official Riftbound Legends and were left unassigned (you can select them in the Registered Roster table):</p>
                  <ul class="list-disc pl-5 text-xs text-slate-400 space-y-1">${unmatchedLegends.map(item => `<li>${item}</li>`).join('')}</ul>`,
                 null,
@@ -328,7 +416,7 @@ function renderPlayers() {
     startBtn.disabled = state.players.length < 2;
 
     if (state.players.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500 italic">No summoners registered yet. Add players or import a .txt list.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500 italic">No players registered yet. Add players or import a .txt list.</td></tr>`;
         return;
     }
 
@@ -612,7 +700,7 @@ function populateForcePairSelects() {
         `<option value="${s.player.id}">${escapeHtml(s.player.name)} (${s.points} pts - ${escapeHtml(shortLegendName(s.player.deck))})</option>`
     ).join('');
 
-    p1Select.innerHTML = `<option value="">Select Summoner 1...</option>` + optionsHtml;
+    p1Select.innerHTML = `<option value="">Select Player 1...</option>` + optionsHtml;
     p2Select.innerHTML = `<option value="">Select Opponent or BYE...</option><option value="BYE">★ Assign Round BYE</option>` + optionsHtml;
 }
 
@@ -723,11 +811,11 @@ function applyDirectForcedPairing() {
     const p2Val = document.getElementById('force-p2-select')?.value;
 
     if (!p1Id || !p2Val) {
-        openModal("Select Summoners", "Please select both Summoner 1 and an Opponent (or BYE) to force a pairing.", null, true);
+        openModal("Select Players", "Please select both Player 1 and an Opponent (or BYE) to force a pairing.", null, true);
         return;
     }
     if (p1Id === p2Val) {
-        openModal("Invalid Pairing", "A Summoner cannot be paired against themselves.", null, true);
+        openModal("Invalid Pairing", "A Player cannot be paired against themselves.", null, true);
         return;
     }
 
@@ -737,7 +825,7 @@ function applyDirectForcedPairing() {
     if (p2Val === 'BYE') {
         const byeMatch = roundObj.matches.find(m => m.bye || m.p2 === null);
         if (!byeMatch) {
-            openModal("No BYE Table Available", "This round has an even number of active Summoners, so there is no BYE slot.", null, true);
+            openModal("No BYE Table Available", "This round has an even number of active Players, so there is no BYE slot.", null, true);
             return;
         }
         executeSeatSwap(activeIdx, loc1.match.id, loc1.slot, byeMatch.id, 'p1');
@@ -771,7 +859,7 @@ function addLockedPairToList() {
     const p2Val = document.getElementById('force-p2-select')?.value;
 
     if (!p1Id || !p2Val || p1Id === p2Val) {
-        openModal("Invalid Selection", "Please choose two distinct Summoners (or a Summoner and BYE) to pin.", null, true);
+        openModal("Invalid Selection", "Please choose two distinct Players (or a Player and BYE) to pin.", null, true);
         return;
     }
 
@@ -979,7 +1067,7 @@ function renderSwissRounds() {
         container.innerHTML = `
             <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-12 text-center text-slate-500">
                 <p class="mb-4">No Swiss rounds generated yet.</p>
-                <button onclick="switchTab('players')" class="px-5 py-2.5 bg-amber-600 text-slate-950 font-bold rounded-xl cursor-pointer">Go to Summoners &amp; Start</button>
+                <button onclick="switchTab('players')" class="px-5 py-2.5 bg-amber-600 text-slate-950 font-bold rounded-xl cursor-pointer">Go to Players &amp; Start</button>
             </div>`;
         nextRoundBtn.disabled = true;
         return;
@@ -1033,12 +1121,12 @@ function renderSwissRounds() {
     if (selectedSwapSlot && selectedSwapSlot.roundIdx === activeIdx && !locked) {
         const selMatch = activeRound.matches.find(m => m.id === selectedSwapSlot.matchId);
         const selPlayerId = selMatch ? selMatch[selectedSwapSlot.slot] : null;
-        const selName = selPlayerId ? (playerMap.get(selPlayerId)?.name || 'Summoner') : 'BYE Slot';
+        const selName = selPlayerId ? (playerMap.get(selPlayerId)?.name || 'Player') : 'BYE Slot';
         bannersHtml += `
             <div class="bg-indigo-950/80 border border-indigo-500/60 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-indigo-200">
                 <div class="flex items-center gap-2.5">
                     <span class="text-base">⇄</span>
-                    <span><strong>Swap Mode Active:</strong> Selected <strong>${escapeHtml(selName)}</strong>. Click any other Summoner (or BYE slot) on the tables below to swap their seats immediately.</span>
+                    <span><strong>Swap Mode Active:</strong> Selected <strong>${escapeHtml(selName)}</strong>. Click any other Player (or BYE slot) on the tables below to swap their seats immediately.</span>
                 </div>
                 <button onclick="cancelSeatSwap()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg cursor-pointer shrink-0">
                     Cancel Swap
@@ -1098,7 +1186,7 @@ function renderSwissRounds() {
                             <!-- Player 1 -->
                             <div class="flex justify-between items-center p-3 rounded-xl bg-slate-950/60 border transition-all ${isP1Selected ? 'border-indigo-400 ring-2 ring-indigo-500/40 bg-indigo-950/30' : m.winner === m.p1 ? 'border-amber-500/60 bg-amber-500/5' : 'border-slate-800/80'}">
                                 <div class="flex items-center gap-2 min-w-0 pr-2">
-                                    ${!locked ? `<button onclick="handleSeatClick(${activeIdx}, '${m.id}', 'p1')" title="Click to swap this Summoner with another seat" class="px-1.5 py-1 rounded bg-slate-900 hover:bg-indigo-900/80 text-slate-400 hover:text-indigo-200 border border-slate-800 text-xs cursor-pointer shrink-0 transition-colors">⇄</button>` : ''}
+                                    ${!locked ? `<button onclick="handleSeatClick(${activeIdx}, '${m.id}', 'p1')" title="Click to swap this Player with another seat" class="px-1.5 py-1 rounded bg-slate-900 hover:bg-indigo-900/80 text-slate-400 hover:text-indigo-200 border border-slate-800 text-xs cursor-pointer shrink-0 transition-colors">⇄</button>` : ''}
                                     <div class="truncate">
                                         <div class="flex items-center gap-2">
                                             <span class="font-bold text-slate-200 truncate">${p1 ? escapeHtml(p1.name) : 'Unknown'}</span>
@@ -1119,7 +1207,7 @@ function renderSwissRounds() {
                             ${p2 ? `
                                 <div class="flex justify-between items-center p-3 rounded-xl bg-slate-950/60 border transition-all ${isP2Selected ? 'border-indigo-400 ring-2 ring-indigo-500/40 bg-indigo-950/30' : m.winner === m.p2 ? 'border-amber-500/60 bg-amber-500/5' : 'border-slate-800/80'}">
                                     <div class="flex items-center gap-2 min-w-0 pr-2">
-                                        ${!locked ? `<button onclick="handleSeatClick(${activeIdx}, '${m.id}', 'p2')" title="Click to swap this Summoner with another seat" class="px-1.5 py-1 rounded bg-slate-900 hover:bg-indigo-900/80 text-slate-400 hover:text-indigo-200 border border-slate-800 text-xs cursor-pointer shrink-0 transition-colors">⇄</button>` : ''}
+                                        ${!locked ? `<button onclick="handleSeatClick(${activeIdx}, '${m.id}', 'p2')" title="Click to swap this Player with another seat" class="px-1.5 py-1 rounded bg-slate-900 hover:bg-indigo-900/80 text-slate-400 hover:text-indigo-200 border border-slate-800 text-xs cursor-pointer shrink-0 transition-colors">⇄</button>` : ''}
                                         <div class="truncate">
                                             <div class="flex items-center gap-2">
                                                 <span class="font-bold text-slate-200 truncate">${escapeHtml(p2.name)}</span>
@@ -1135,7 +1223,7 @@ function renderSwissRounds() {
                                 </div>
                             ` : `
                                 <div class="p-3 rounded-xl bg-slate-950/40 border border-slate-800/40 text-center text-slate-500 text-xs italic">
-                                    Lowest-ranked eligible Summoner receives Round BYE (+3 Match Points, 2-0 Games)
+                                    Lowest-ranked eligible Player receives Round BYE (+3 Match Points, 2-0 Games)
                                 </div>
                             `}
                         </div>
@@ -1252,7 +1340,7 @@ function calculateStandings() {
 
     if (state.swissRounds.length === 0) {
         cutBtn.disabled = true;
-        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-500 italic">No active Swiss tournament. Generate Round 1 Pairings on the Summoners tab to view standings.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-500 italic">No active Swiss tournament. Generate Round 1 Pairings on the Players tab to view standings.</td></tr>`;
         return;
     }
 
@@ -1384,11 +1472,11 @@ function renderMetaBreakdown() {
     if (totalPlayers === 0) {
         kpiContainer.innerHTML = `
             <div class="col-span-full bg-slate-900/60 border border-slate-800/80 rounded-2xl p-8 text-center text-slate-500 italic">
-                No Summoners registered yet. Add players on the Summoners tab to generate the Meta Breakdown.
+                No Players registered yet. Add players on the Players tab to generate the Meta Breakdown.
             </div>
         `;
         barsContainer.innerHTML = `<p class="text-slate-500 italic text-center py-8 text-sm">No Legend representation data.</p>`;
-        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 italic">Register summoners to view Legend analytics.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 italic">Register players to view Legend analytics.</td></tr>`;
         return;
     }
 
@@ -1401,7 +1489,7 @@ function renderMetaBreakdown() {
 
     kpiContainer.innerHTML = `
         <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 shadow-lg">
-            <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Total Summoners</div>
+            <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Total Players</div>
             <div class="text-3xl font-black font-arcane text-slate-100 mt-1">${totalPlayers}</div>
             <div class="text-xs text-slate-500 mt-1">${state.swissRounds.length} Swiss Round(s) Tracked</div>
         </div>
@@ -1435,7 +1523,7 @@ function renderMetaBreakdown() {
             <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800/80">
                 <div class="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full transition-all duration-300" style="width: ${Math.max(item.metaShare, 3)}%"></div>
             </div>
-            <div class="text-[11px] text-slate-500 truncate">Pilots: ${item.pilotNames.map(n => escapeHtml(n)).join(', ')}</div>
+            <div class="text-[11px] text-slate-500 truncate">Players: ${item.pilotNames.map(n => escapeHtml(n)).join(', ')}</div>
         </div>
     `).join('');
 
@@ -1505,7 +1593,7 @@ function renderWinrateMatrix() {
     if (!container) return;
 
     if (state.players.length === 0) {
-        container.innerHTML = `<div class="p-12 text-center text-slate-500 italic">No Summoners registered yet. Add players and record match results to populate the Winrate Matrix.</div>`;
+        container.innerHTML = `<div class="p-12 text-center text-slate-500 italic">No Players registered yet. Add players and record match results to populate the Winrate Matrix.</div>`;
         return;
     }
 
@@ -1757,7 +1845,7 @@ function generateEliminationBracket() {
 
     const container = document.getElementById('elimination-bracket-container');
     if (state.players.length < 2) {
-        container.innerHTML = `<p class="text-amber-400/80 italic text-center py-12">Register summoners first to build an elimination bracket.</p>`;
+        container.innerHTML = `<p class="text-amber-400/80 italic text-center py-12">Register players first to build an elimination bracket.</p>`;
         return;
     }
 

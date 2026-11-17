@@ -28,7 +28,7 @@
             <!-- Navigation Tabs -->
             <nav class="flex flex-wrap bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 shadow-inner gap-1">
                 <button onclick="switchTab('players')" id="nav-players" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-amber-500 text-slate-950 font-semibold shadow cursor-pointer">
-                    Summoners (<span id="player-count">0</span>)
+                    Players (<span id="player-count">0</span>)
                 </button>
                 <button onclick="switchTab('swiss')" id="nav-swiss" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
                     Swiss Pairings
@@ -59,11 +59,11 @@
                 <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
                     <h2 class="text-xl font-bold font-arcane text-amber-400 mb-4 flex items-center gap-2">
-                        <span>⚔️</span> Register Summoner
+                        <span>⚔️</span> Register Player
                     </h2>
                     <form id="player-form" onsubmit="addPlayer(event)" class="space-y-4">
                         <div>
-                            <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Summoner Name</label>
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Player Name</label>
                             <input type="text" id="p-name" required placeholder="e.g. Faker" 
                                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-colors">
                         </div>
@@ -87,13 +87,23 @@
                         </p>
                         <input type="file" id="txt-file-input" accept=".txt,text/plain" onchange="importPlayersFromTxt(event)" class="hidden">
                         <button type="button" onclick="document.getElementById('txt-file-input').click()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-sm font-medium rounded-xl border border-slate-700 transition-colors cursor-pointer flex items-center justify-center gap-2">
-                            <span>📄</span> Import Summoners from .txt
+                            <span>📄</span> Import Players from .txt
                         </button>
                     </div>
 
+                    <!-- Tournament Controls & Snapshot Backup/Restore -->
                     <div class="mt-6 pt-6 border-t border-slate-800/80 space-y-3">
                         <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Tournament Controls</h3>
-                        <button onclick="promptResetTournament()" class="w-full py-2.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-sm font-medium rounded-xl border border-rose-900/50 transition-colors cursor-pointer">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <button type="button" onclick="downloadTournamentSnapshot()" class="py-2.5 px-3 bg-indigo-950/60 hover:bg-indigo-900/70 text-indigo-300 text-xs font-semibold rounded-xl border border-indigo-800/60 transition-colors cursor-pointer flex items-center justify-center gap-1.5">
+                                <span>💾</span> Download Snapshot
+                            </button>
+                            <input type="file" id="snapshot-file-input" accept=".json,application/json" onchange="loadTournamentSnapshot(event)" class="hidden">
+                            <button type="button" onclick="document.getElementById('snapshot-file-input').click()" class="py-2.5 px-3 bg-emerald-950/60 hover:bg-emerald-900/70 text-emerald-300 text-xs font-semibold rounded-xl border border-emerald-800/60 transition-colors cursor-pointer flex items-center justify-center gap-1.5">
+                                <span>📂</span> Load Tournament
+                            </button>
+                        </div>
+                        <button type="button" onclick="promptResetTournament()" class="w-full py-2.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-sm font-medium rounded-xl border border-rose-900/50 transition-colors cursor-pointer">
                             Reset Entire Tournament
                         </button>
                     </div>
@@ -113,14 +123,14 @@
                             <thead>
                                 <tr class="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
                                     <th class="p-3.5 font-semibold">#</th>
-                                    <th class="p-3.5 font-semibold">Summoner</th>
+                                    <th class="p-3.5 font-semibold">Player</th>
                                     <th class="p-3.5 font-semibold">Legend / Deck Type</th>
                                     <th class="p-3.5 font-semibold text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="players-table-body" class="divide-y divide-slate-900 text-sm">
                                 <tr>
-                                    <td colspan="4" class="p-8 text-center text-slate-500 italic">No summoners registered yet. Add players or import a .txt list.</td>
+                                    <td colspan="4" class="p-8 text-center text-slate-500 italic">No players registered yet. Add players or import a .txt list.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -176,9 +186,9 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                     <div>
-                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Summoner 1</label>
+                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Player 1</label>
                         <select id="force-p1-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-                            <option value="">Select Summoner...</option>
+                            <option value="">Select Player...</option>
                         </select>
                     </div>
                     <div>
@@ -234,7 +244,7 @@
                         <thead>
                             <tr class="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
                                 <th class="p-3.5 font-semibold text-center w-16">Rank</th>
-                                <th class="p-3.5 font-semibold">Summoner</th>
+                                <th class="p-3.5 font-semibold">Player</th>
                                 <th class="p-3.5 font-semibold">Legend</th>
                                 <th class="p-3.5 font-semibold text-center">Record (W-L-D)</th>
                                 <th class="p-3.5 font-semibold text-center">Points</th>
@@ -294,7 +304,7 @@
                         <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
                             <span>📊</span> Field Representation
                         </h2>
-                        <p class="text-xs text-slate-400 mt-1">Share of registered Summoners piloting each Legend.</p>
+                        <p class="text-xs text-slate-400 mt-1">Share of registered Players piloting each Legend.</p>
                     </div>
                     <div id="meta-bars-container" class="space-y-4 flex-grow overflow-y-auto max-h-[480px] pr-1"></div>
                 </div>
@@ -399,7 +409,7 @@
         <p>Riftbound Tournament Manager • Built for Competitive TCG Play</p>
     </footer>
 
-    <!-- Application Script -->
-    <script src="app.js"></script>
+    <!-- Application Script (cache-busted for GitHub Pages) -->
+    <script src="app.js?v=2"></script>
 </body>
 </html>
