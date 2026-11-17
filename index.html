@@ -68,7 +68,7 @@
                                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-colors">
                         </div>
                         <div>
-                            <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Legend</label>
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Deck Type (Legend)</label>
                             <select id="p-deck" 
                                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition-colors">
                                 <option value="" selected>No Legend Selected (Optional)</option>
@@ -124,7 +124,7 @@
                                 <tr class="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
                                     <th class="p-3.5 font-semibold">#</th>
                                     <th class="p-3.5 font-semibold">Player</th>
-                                    <th class="p-3.5 font-semibold">Legend</th>
+                                    <th class="p-3.5 font-semibold">Legend / Deck Type</th>
                                     <th class="p-3.5 font-semibold text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -136,8 +136,19 @@
                         </table>
                     </div>
 
-                    <div class="mt-6 flex justify-end">
-                        <button onclick="generateSwissPairings()" id="start-swiss-btn" class="px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-slate-950 font-bold font-arcane rounded-xl shadow-lg shadow-emerald-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <div class="mt-6 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                        <div class="w-full sm:w-64">
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">
+                                Number of Swiss Rounds
+                            </label>
+                            <input type="number" id="custom-rounds-input" min="1" max="15" oninput="updateCustomRounds(this.value)" placeholder="Auto (Recommended)"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors">
+                            <p id="recommended-rounds-hint" class="text-[11px] text-slate-500 mt-1">
+                                Leave empty for automatic Swiss calculation.
+                            </p>
+                        </div>
+
+                        <button onclick="generateSwissPairings()" id="start-swiss-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-slate-950 font-bold font-arcane rounded-xl shadow-lg shadow-emerald-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                             Generate Round 1 Pairings ➔
                         </button>
                     </div>
@@ -149,9 +160,12 @@
         <section id="tab-swiss" class="hidden space-y-6">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 border border-slate-800/80 p-6 rounded-2xl shadow-xl">
                 <div>
-                    <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
-                        <span>⚔️</span> Swiss Pairings Matrix
-                    </h2>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
+                            <span>⚔️</span> Swiss Pairings Matrix
+                        </h2>
+                        <span id="swiss-round-counter-badge" class="hidden text-xs font-mono px-2.5 py-0.5 rounded-full bg-slate-950 text-amber-400 border border-amber-500/30"></span>
+                    </div>
                     <p class="text-xs text-slate-400 mt-1">Backtracking Swiss solver pairs players by Point Bracket while preventing rematches and rotating BYEs fairly.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
@@ -410,6 +424,6 @@
     </footer>
 
     <!-- Application Script (cache-busted for GitHub Pages) -->
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>

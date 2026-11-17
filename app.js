@@ -65,6 +65,8 @@ let state = {
     players: [],
     swissRounds: [],
     currentRoundIndex: 0,
+    customMaxRounds: null,
+    maxSwissRounds: null,
     eliminationBracket: null
 };
 
@@ -98,7 +100,15 @@ function loadState() {
     const saved = localStorage.getItem('riftbound_tournament_state');
     if (saved) {
         try {
-            state = JSON.parse(saved);
+            const parsed = JSON.parse(saved);
+            state = {
+                players: parsed.players || [],
+                swissRounds: parsed.swissRounds || [],
+                currentRoundIndex: parsed.currentRoundIndex || 0,
+                customMaxRounds: parsed.customMaxRounds || null,
+                maxSwissRounds: parsed.maxSwissRounds || null,
+                eliminationBracket: parsed.eliminationBracket || null
+            };
         } catch (e) {
             console.error("Failed to parse saved state", e);
         }
@@ -116,6 +126,80 @@ function renderAll() {
 
 function formatDeckLabel(deck) {
     return deck && deck.trim() ? deck.trim() : 'Unassigned';
+}
+
+// ============================================================================
+// SWISS ROUND COUNT CALCULATION (OFFICIAL TCG LOG2 / BRACKET THRESHOLDS)
+// ============================================================================
+
+/**
+ * Standard TCG Swiss round recommendations based on player count:
+ * 2-3 players:   2 rounds
+ * 4-8 players:   3 rounds
+ * 9-16 players:  4 rounds
+ * 17-32 players: 5 rounds
+ * 33-64 players: 6 rounds
+ * 65-128 players: 7 rounds
+ * Formula: Math.ceil(Math.log2(playerCount)) with a minimum of 2 rounds when >= 2 players.
+ */
+function getRecommendedSwissRounds(playerCount) {
+    if (playerCount < 2) return 0;
+    if (playerCount <= 3) return 2;
+    return Math.ceil(Math.log2(playerCount));
+}
+
+function getEffectiveMaxRounds() {
+    if (state.customMaxRounds && state.customMaxRounds >= 1) {
+        return state.customMaxRounds;
+    }
+    if (state.maxSwissRounds && state.maxSwissRounds >= 1) {
+        return state.maxSwissRounds;
+    }
+    return getRecommendedSwissRounds(state.players.length);
+}
+
+function updateCustomRounds(val) {
+    const trimmed = String(val).trim();
+    if (!trimmed) {
+        state.customMaxRounds = null;
+    } else {
+        const parsed = parseInt(trimmed, 10);
+        state.customMaxRounds = (!isNaN(parsed) && parsed >= 1) ? parsed : null;
+    }
+
+    // If a tournament is already running, sync maxSwissRounds dynamically
+    if (state.swissRounds.length > 0) {
+        state.maxSwissRounds = state.customMaxRounds || getRecommendedSwissRounds(state.players.length);
+    }
+
+    saveState();
+    updateRoundsInputUI();
+    renderSwissRounds();
+}
+
+function updateRoundsInputUI() {
+    const input = document.getElementById('custom-rounds-input');
+    const hint = document.getElementById('recommended-rounds-hint');
+    if (!input || !hint) return;
+
+    const count = state.players.length;
+    const recommended = getRecommendedSwissRounds(count);
+
+    if (document.activeElement !== input) {
+        input.value = state.customMaxRounds ? String(state.customMaxRounds) : '';
+    }
+
+    if (count < 2) {
+        input.placeholder = "Auto (Add 2+ players)";
+        hint.innerHTML = `Leave empty for automatic Swiss calculation.`;
+    } else {
+        input.placeholder = `Auto (${recommended} rounds for ${count} players)`;
+        if (state.customMaxRounds) {
+            hint.innerHTML = `Custom: <strong>${state.customMaxRounds} round(s)</strong> (Recommended for ${count} players: ${recommended})`;
+        } else {
+            hint.innerHTML = `Auto-selected: <strong class="text-amber-400">${recommended} Swiss rounds</strong> for ${count} players.`;
+        }
+    }
 }
 
 // Custom Modal Helpers
@@ -156,7 +240,14 @@ function promptResetTournament() {
         "Reset Entire Tournament",
         "Are you sure you want to clear all registered players, Swiss rounds, standings, and playoff brackets?",
         () => {
-            state = { players: [], swissRounds: [], currentRoundIndex: 0, eliminationBracket: null };
+            state = {
+                players: [],
+                swissRounds: [],
+                currentRoundIndex: 0,
+                customMaxRounds: null,
+                maxSwissRounds: null,
+                eliminationBracket: null
+            };
             selectedSwapSlot = null;
             saveState();
             renderAll();
@@ -172,12 +263,14 @@ function promptResetTournament() {
 function downloadTournamentSnapshot() {
     const snapshot = {
         app: "Riftbound Tournament Hub",
-        version: 2,
+        version: 3,
         exportedAt: new Date().toISOString(),
         state: {
             players: state.players || [],
             swissRounds: state.swissRounds || [],
             currentRoundIndex: state.currentRoundIndex || 0,
+            customMaxRounds: state.customMaxRounds || null,
+            maxSwissRounds: state.maxSwissRounds || null,
             eliminationBracket: state.eliminationBracket || null
         }
     };
@@ -219,6 +312,8 @@ function loadTournamentSnapshot(event) {
                 })),
                 swissRounds: loadedState.swissRounds,
                 currentRoundIndex: typeof loadedState.currentRoundIndex === 'number' ? loadedState.currentRoundIndex : 0,
+                customMaxRounds: loadedState.customMaxRounds || null,
+                maxSwissRounds: loadedState.maxSwissRounds || null,
                 eliminationBracket: loadedState.eliminationBracket || null
             };
 
@@ -414,6 +509,8 @@ function renderPlayers() {
     countBadge.textContent = state.players.length;
     playerBadge.textContent = `${state.players.length} Registered`;
     startBtn.disabled = state.players.length < 2;
+
+    updateRoundsInputUI();
 
     if (state.players.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500 italic">No players registered yet. Add players or import a .txt list.</td></tr>`;
@@ -940,6 +1037,7 @@ function generateSwissPairings() {
         state.swissRounds = [];
         state.currentRoundIndex = 0;
         state.eliminationBracket = null;
+        state.maxSwissRounds = state.customMaxRounds || getRecommendedSwissRounds(state.players.length);
         selectedSwapSlot = null;
         const pairings = createPairingsForRound(0, []);
         state.swissRounds.push({ round: 1, matches: pairings, stale: false, forcedSpecs: [] });
@@ -971,6 +1069,12 @@ function nextSwissRound() {
             null,
             true
         );
+        return;
+    }
+
+    const maxRounds = getEffectiveMaxRounds();
+    if (state.swissRounds.length >= maxRounds) {
+        switchTab('standings');
         return;
     }
 
@@ -1057,12 +1161,14 @@ function renderSwissRounds() {
     const repairRoundBtn = document.getElementById('repair-round-btn');
     const forcePairBtn = document.getElementById('force-pair-btn');
     const forcePanel = document.getElementById('force-pairings-panel');
+    const counterBadge = document.getElementById('swiss-round-counter-badge');
 
     if (state.swissRounds.length === 0) {
         roundTabsContainer.innerHTML = '';
         bannersContainer.innerHTML = '';
         repairRoundBtn.classList.add('hidden');
         forcePairBtn.classList.add('hidden');
+        if (counterBadge) counterBadge.classList.add('hidden');
         if (forcePanel) forcePanel.classList.add('hidden');
         container.innerHTML = `
             <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-12 text-center text-slate-500">
@@ -1070,6 +1176,7 @@ function renderSwissRounds() {
                 <button onclick="switchTab('players')" class="px-5 py-2.5 bg-amber-600 text-slate-950 font-bold rounded-xl cursor-pointer">Go to Players &amp; Start</button>
             </div>`;
         nextRoundBtn.disabled = true;
+        nextRoundBtn.textContent = 'Next Round ➔';
         return;
     }
 
@@ -1080,6 +1187,12 @@ function renderSwissRounds() {
     const activeIdx = state.currentRoundIndex;
     const activeRound = state.swissRounds[activeIdx];
     const locked = isRoundLocked(activeIdx);
+    const maxRounds = getEffectiveMaxRounds();
+
+    if (counterBadge) {
+        counterBadge.classList.remove('hidden');
+        counterBadge.textContent = `Round ${activeRound.round} of ${maxRounds}`;
+    }
 
     if (!locked) {
         repairRoundBtn.classList.remove('hidden');
@@ -1106,8 +1219,24 @@ function renderSwissRounds() {
     }).join('');
 
     const playerMap = new Map(state.players.map(p => [p.id, p]));
+    const latestRound = state.swissRounds[state.swissRounds.length - 1];
+    const allComplete = latestRound.matches.every(m => m.winner !== null);
+    const isFinalSwissRound = state.swissRounds.length >= maxRounds;
 
     let bannersHtml = '';
+    if (isFinalSwissRound && allComplete) {
+        bannersHtml += `
+            <div class="bg-emerald-950/60 border border-emerald-500/50 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-emerald-200">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-base">🏁</span>
+                    <span><strong>All ${maxRounds} Swiss Rounds Completed!</strong> Final standings and tiebreakers are ready for the Top Cut.</span>
+                </div>
+                <button onclick="switchTab('standings')" class="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg uppercase tracking-wider cursor-pointer shrink-0 transition-colors">
+                    View Final Standings ➔
+                </button>
+            </div>
+        `;
+    }
     if (locked) {
         bannersHtml += `
             <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 flex items-center justify-between text-xs text-slate-300">
@@ -1241,9 +1370,12 @@ function renderSwissRounds() {
         </div>
     `;
 
-    const latestRound = state.swissRounds[state.swissRounds.length - 1];
-    const allComplete = latestRound.matches.every(m => m.winner !== null);
     nextRoundBtn.disabled = !allComplete;
+    if (isFinalSwissRound) {
+        nextRoundBtn.textContent = 'Finish Swiss (Standings) ➔';
+    } else {
+        nextRoundBtn.textContent = `Next Round (${state.swissRounds.length + 1}/${maxRounds}) ➔`;
+    }
 }
 
 // Standings & Tiebreakers
@@ -1491,7 +1623,7 @@ function renderMetaBreakdown() {
         <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 shadow-lg">
             <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Total Players</div>
             <div class="text-3xl font-black font-arcane text-slate-100 mt-1">${totalPlayers}</div>
-            <div class="text-xs text-slate-500 mt-1">${state.swissRounds.length} Swiss Round(s) Tracked</div>
+            <div class="text-xs text-slate-500 mt-1">${state.swissRounds.length} / ${getEffectiveMaxRounds()} Swiss Round(s)</div>
         </div>
         <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 shadow-lg">
             <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Unique Legends</div>
