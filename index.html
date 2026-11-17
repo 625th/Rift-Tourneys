@@ -3,49 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riftbound TCG Tournament Manager</title>
+    <title>RB Hub • Riftbound TCG Tournament Manager</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=7">
 </head>
-<body class="min-h-screen flex flex-col bg-[#0b0f17] text-slate-100 selection:bg-amber-500 selection:text-black">
+<body class="min-h-screen flex flex-col bg-[#12100E] text-[#FAFAF9] selection:bg-[#F59E0B] selection:text-[#12100E]">
 
     <!-- Header -->
-    <header class="border-b border-amber-900/40 bg-[#090d14]/90 backdrop-blur sticky top-0 z-40 shadow-lg shadow-black/50">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center border border-amber-500/50 shadow-inner shadow-amber-400/20">
-                    <span class="text-xl font-bold font-arcane text-amber-100">RB</span>
+    <header class="theme-header border-b border-stone-800 backdrop-blur sticky top-0 z-40 shadow-lg shadow-black/30">
+        <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-row justify-between items-center gap-4">
+            <!-- Brand Title: RB Hub -->
+            <div class="flex items-center gap-3 shrink-0">
+                <div class="theme-brand-badge w-9 h-9 rounded-lg flex items-center justify-center border shadow-inner">
+                    <span class="text-base font-black font-arcane">RH</span>
                 </div>
-                <div>
-                    <h1 class="text-2xl font-black tracking-wider font-arcane text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600">
-                        Riftbound Tournament Hub
-                    </h1>
-                    <p class="text-xs text-slate-400 tracking-wide">TCG Swiss &amp; Elimination Manager</p>
-                </div>
+                <h1 class="theme-brand-title text-xl sm:text-2xl font-black tracking-wider font-arcane whitespace-nowrap">
+                    RB Hub
+                </h1>
             </div>
 
-            <!-- Navigation Tabs -->
-            <nav class="flex flex-wrap bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 shadow-inner gap-1">
-                <button onclick="switchTab('players')" id="nav-players" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-amber-500 text-slate-950 font-semibold shadow cursor-pointer">
-                    Players (<span id="player-count">0</span>)
+            <!-- Single-Row Navigation Tabs + Theme Toggle -->
+            <div class="flex items-center gap-2.5 min-w-0">
+                <nav class="flex flex-nowrap items-center overflow-x-auto bg-[#1C1917] p-1 rounded-xl border border-stone-800 shadow-inner gap-1">
+                    <button type="button" data-action="switch-tab" data-tab="players" id="nav-players" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap bg-[#F59E0B] text-[#12100E] shadow cursor-pointer">
+                        Players (<span id="player-count">0</span>)
+                    </button>
+                    <button type="button" data-action="switch-tab" data-tab="swiss" id="nav-swiss" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap text-[#A8A29E] hover:text-[#FAFAF9] cursor-pointer">
+                        Swiss
+                    </button>
+                    <button type="button" data-action="switch-tab" data-tab="standings" id="nav-standings" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap text-[#A8A29E] hover:text-[#FAFAF9] cursor-pointer">
+                        Standings
+                    </button>
+                    <button type="button" data-action="switch-tab" data-tab="elimination" id="nav-elimination" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap text-[#A8A29E] hover:text-[#FAFAF9] cursor-pointer">
+                        Playoffs
+                    </button>
+                    <button type="button" data-action="switch-tab" data-tab="meta" id="nav-meta" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap text-[#A8A29E] hover:text-[#FAFAF9] cursor-pointer">
+                        Meta
+                    </button>
+                    <button type="button" data-action="switch-tab" data-tab="matrix" id="nav-matrix" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap text-[#A8A29E] hover:text-[#FAFAF9] cursor-pointer">
+                        Matrix
+                    </button>
+                </nav>
+
+                <!-- Dark / Light Theme Switch -->
+                <button type="button" data-action="toggle-theme" id="theme-toggle-btn" title="Switch Dark / Light Theme" aria-label="Switch Dark / Light Theme" class="theme-input shrink-0 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm">
+                    <span id="theme-toggle-icon">☀️</span>
+                    <span id="theme-toggle-label" class="hidden md:inline">Light</span>
                 </button>
-                <button onclick="switchTab('swiss')" id="nav-swiss" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
-                    Swiss Pairings
-                </button>
-                <button onclick="switchTab('standings')" id="nav-standings" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
-                    Standings &amp; Tiebreakers
-                </button>
-                <button onclick="switchTab('elimination')" id="nav-elimination" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
-                    Elimination Bracket
-                </button>
-                <button onclick="switchTab('meta')" id="nav-meta" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
-                    Meta Breakdown
-                </button>
-                <button onclick="switchTab('matrix')" id="nav-matrix" class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200 cursor-pointer">
-                    Winrate Matrix
-                </button>
-            </nav>
+            </div>
         </div>
     </header>
 
@@ -56,99 +62,99 @@
         <section id="tab-players" class="space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Registration Card -->
-                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl pointer-events-none"></div>
-                    <h2 class="text-xl font-bold font-arcane text-amber-400 mb-4 flex items-center gap-2">
+                <div class="theme-card bg-[#1C1917] border border-stone-800 rounded-2xl p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-[#F59E0B]/5 rounded-full blur-3xl pointer-events-none"></div>
+                    <h2 class="text-xl font-bold font-arcane text-[#F59E0B] mb-4 flex items-center gap-2">
                         <span>⚔️</span> Register Player
                     </h2>
-                    <form id="player-form" onsubmit="addPlayer(event)" class="space-y-4">
+                    <form id="player-form" class="space-y-4">
                         <div>
-                            <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Player Name</label>
-                            <input type="text" id="p-name" required placeholder="e.g. Faker" 
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-colors">
+                            <label for="p-name" class="block text-xs uppercase tracking-wider text-[#A8A29E] font-semibold mb-1">Player Name</label>
+                            <input type="text" id="p-name" required placeholder="e.g. Faker"
+                                class="theme-input w-full bg-[#141210] border border-stone-800 rounded-xl px-4 py-2.5 text-[#FAFAF9] placeholder-stone-600 focus:outline-none focus:border-[#F59E0B] transition-colors">
                         </div>
                         <div>
-                            <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Legend</label>
-                            <select id="p-deck" 
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500 transition-colors">
+                            <label for="p-deck" class="block text-xs uppercase tracking-wider text-[#A8A29E] font-semibold mb-1">Legend</label>
+                            <select id="p-deck"
+                                class="theme-input w-full bg-[#141210] border border-stone-800 rounded-xl px-4 py-2.5 text-[#FAFAF9] focus:outline-none focus:border-[#F59E0B] transition-colors">
                                 <option value="" selected>No Legend Selected (Optional)</option>
                             </select>
                         </div>
-                        <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-bold font-arcane rounded-xl shadow-lg shadow-amber-600/20 transition-all cursor-pointer">
+                        <button type="submit" class="w-full py-3 bg-gradient-to-r from-[#F59E0B] to-amber-600 text-[#12100E] font-bold font-arcane rounded-xl shadow-lg transition-all cursor-pointer">
                             Add to Tournament
                         </button>
                     </form>
 
                     <!-- Bulk Import from TXT -->
-                    <div class="mt-6 pt-6 border-t border-slate-800/80 space-y-3">
-                        <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Bulk Import (.txt)</h3>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            Format: <code class="text-amber-300 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">Name - Legend</code> (one per row, Legend can be empty).
+                    <div class="mt-6 pt-6 border-t border-stone-800 space-y-3">
+                        <h3 class="text-sm font-semibold text-[#FAFAF9] uppercase tracking-wider">Bulk Import (.txt)</h3>
+                        <p class="text-xs text-[#A8A29E] leading-relaxed">
+                            Format: <code class="text-amber-400 bg-[#141210] px-1.5 py-0.5 rounded border border-stone-800">Name - Legend</code> (one per row, Legend can be empty).
                         </p>
-                        <input type="file" id="txt-file-input" accept=".txt,text/plain" onchange="importPlayersFromTxt(event)" class="hidden">
-                        <button type="button" onclick="document.getElementById('txt-file-input').click()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-sm font-medium rounded-xl border border-slate-700 transition-colors cursor-pointer flex items-center justify-center gap-2">
+                        <input type="file" id="txt-file-input" accept=".txt,text/plain" class="hidden">
+                        <button type="button" data-action="trigger-file-input" data-target="txt-file-input" class="w-full py-2.5 bg-stone-800 hover:bg-stone-700 text-amber-300 text-sm font-medium rounded-xl border border-stone-700 transition-colors cursor-pointer flex items-center justify-center gap-2">
                             <span>📄</span> Import Players from .txt
                         </button>
                     </div>
 
                     <!-- Tournament Controls & Snapshot Backup/Restore -->
-                    <div class="mt-6 pt-6 border-t border-slate-800/80 space-y-3">
-                        <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Tournament Controls</h3>
+                    <div class="mt-6 pt-6 border-t border-stone-800 space-y-3">
+                        <h3 class="text-sm font-semibold text-[#FAFAF9] uppercase tracking-wider">Tournament Controls</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <button type="button" onclick="downloadTournamentSnapshot()" class="py-2.5 px-3 bg-indigo-950/60 hover:bg-indigo-900/70 text-indigo-300 text-xs font-semibold rounded-xl border border-indigo-800/60 transition-colors cursor-pointer flex items-center justify-center gap-1.5">
-                                <span>💾</span> Download Snapshot
+                            <button type="button" data-action="download-snapshot" class="py-2.5 px-3 bg-amber-950/40 hover:bg-amber-950/80 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/40 transition-colors cursor-pointer flex items-center justify-center gap-1.5">
+                                <span>💾</span> Save Snapshot
                             </button>
-                            <input type="file" id="snapshot-file-input" accept=".json,application/json" onchange="loadTournamentSnapshot(event)" class="hidden">
-                            <button type="button" onclick="document.getElementById('snapshot-file-input').click()" class="py-2.5 px-3 bg-emerald-950/60 hover:bg-emerald-900/70 text-emerald-300 text-xs font-semibold rounded-xl border border-emerald-800/60 transition-colors cursor-pointer flex items-center justify-center gap-1.5">
-                                <span>📂</span> Load Tournament
+                            <input type="file" id="snapshot-file-input" accept=".json,application/json" class="hidden">
+                            <button type="button" data-action="trigger-file-input" data-target="snapshot-file-input" class="py-2.5 px-3 bg-stone-800 hover:bg-stone-700 text-[#FAFAF9] text-xs font-semibold rounded-xl border border-stone-700 transition-colors cursor-pointer flex items-center justify-center gap-1.5">
+                                <span>📂</span> Load Snapshot
                             </button>
                         </div>
-                        <button type="button" onclick="promptResetTournament()" class="w-full py-2.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-sm font-medium rounded-xl border border-rose-900/50 transition-colors cursor-pointer">
+                        <button type="button" data-action="reset-tournament" class="w-full py-2.5 bg-red-950/50 hover:bg-[#DC2626] text-red-200 hover:text-white text-sm font-semibold rounded-xl border border-[#DC2626]/50 transition-colors cursor-pointer">
                             Reset Entire Tournament
                         </button>
                     </div>
                 </div>
 
                 <!-- Registered List Table -->
-                <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col">
+                <div class="theme-card lg:col-span-2 bg-[#1C1917] border border-stone-800 rounded-2xl p-6 flex flex-col">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
+                        <h2 class="text-xl font-bold font-arcane text-[#F59E0B] flex items-center gap-2">
                             <span>📜</span> Registered Roster
                         </h2>
-                        <span id="player-badge" class="text-xs bg-slate-800 text-amber-400 px-3 py-1 rounded-full border border-amber-500/20 font-medium">0 Registered</span>
+                        <span id="player-badge" class="text-xs bg-[#141210] text-[#F59E0B] px-3 py-1 rounded-full border border-amber-500/30 font-medium">0 Registered</span>
                     </div>
 
-                    <div class="overflow-x-auto flex-grow rounded-xl border border-slate-800/80 bg-slate-950/50 max-h-[460px]">
+                    <div class="theme-recessed overflow-x-auto flex-grow rounded-xl border border-stone-800 bg-[#141210] max-h-[460px]">
                         <table class="w-full text-left border-collapse">
                             <thead>
-                                <tr class="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                                <tr class="bg-stone-900/90 text-[#A8A29E] text-xs uppercase tracking-wider border-b border-stone-800">
                                     <th class="p-3.5 font-semibold">#</th>
                                     <th class="p-3.5 font-semibold">Player</th>
                                     <th class="p-3.5 font-semibold">Legend</th>
                                     <th class="p-3.5 font-semibold text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="players-table-body" class="divide-y divide-slate-900 text-sm">
+                            <tbody id="players-table-body" class="divide-y divide-stone-800/70 text-sm">
                                 <tr>
-                                    <td colspan="4" class="p-8 text-center text-slate-500 italic">No players registered yet. Add players or import a .txt list.</td>
+                                    <td colspan="4" class="p-8 text-center text-stone-500 italic">No players registered yet. Add players or import a .txt list.</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <div class="mt-6 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                    <div class="mt-6 pt-4 border-t border-stone-800 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                         <div class="w-full sm:w-64">
-                            <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">
+                            <label for="custom-rounds-input" class="block text-xs uppercase tracking-wider text-[#A8A29E] font-semibold mb-1">
                                 Number of Swiss Rounds
                             </label>
-                            <input type="number" id="custom-rounds-input" min="1" max="15" oninput="updateCustomRounds(this.value)" placeholder="Auto (Recommended)"
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors">
-                            <p id="recommended-rounds-hint" class="text-[11px] text-slate-500 mt-1">
+                            <input type="number" id="custom-rounds-input" min="1" max="15" placeholder="Auto (Recommended)"
+                                class="theme-input w-full bg-[#141210] border border-stone-800 rounded-xl px-3.5 py-2 text-sm text-[#FAFAF9] placeholder-stone-500 focus:outline-none focus:border-[#F59E0B] transition-colors">
+                            <p id="recommended-rounds-hint" class="text-[11px] text-[#A8A29E] mt-1">
                                 Leave empty for automatic Swiss calculation.
                             </p>
                         </div>
 
-                        <button onclick="generateSwissPairings()" id="start-swiss-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-slate-950 font-bold font-arcane rounded-xl shadow-lg shadow-emerald-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <button type="button" data-action="start-swiss" id="start-swiss-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-[#F59E0B] to-amber-600 text-[#12100E] font-bold font-arcane rounded-xl shadow-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" disabled>
                             Generate Round 1 Pairings ➔
                         </button>
                     </div>
@@ -158,74 +164,94 @@
 
         <!-- ================= TAB 2: SWISS PAIRINGS ================= -->
         <section id="tab-swiss" class="hidden space-y-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 border border-slate-800/80 p-6 rounded-2xl shadow-xl">
-                <div>
-                    <div class="flex items-center gap-3">
-                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
-                            <span>⚔️</span> Swiss Pairings Matrix
+            <div class="theme-card bg-[#1C1917] border border-stone-800 p-5 sm:p-6 rounded-2xl space-y-4">
+                <!-- Row 1: Title, Round & Progress Badges + Primary Actions -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <h2 class="text-xl font-bold font-arcane text-[#F59E0B] flex items-center gap-2">
+                            <span>⚔️</span> Swiss Pairings
                         </h2>
-                        <span id="swiss-round-counter-badge" class="hidden text-xs font-mono px-2.5 py-0.5 rounded-full bg-slate-950 text-amber-400 border border-amber-500/30"></span>
+                        <span id="swiss-round-counter-badge" class="hidden text-xs font-mono px-2.5 py-0.5 rounded-full bg-[#141210] text-[#F59E0B] border border-amber-500/30"></span>
+                        <span id="swiss-progress-badge" class="hidden text-xs font-mono px-2.5 py-0.5 rounded-full bg-stone-800 text-[#A8A29E] border border-stone-700"></span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-1">Backtracking Swiss solver pairs players by Point Bracket while preventing rematches and rotating BYEs fairly.</p>
+
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <button type="button" data-action="toggle-force-panel" id="force-pair-btn" class="hidden px-3.5 py-2 bg-red-950/60 hover:bg-red-900/70 text-red-200 border border-[#DC2626]/50 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer">
+                            ⚡ Force Pairings
+                        </button>
+                        <button type="button" data-action="repair-round" id="repair-round-btn" class="hidden px-3.5 py-2 bg-amber-950/60 hover:bg-amber-900/70 text-amber-300 border border-amber-500/40 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer">
+                            ↻ Re-Pair Round
+                        </button>
+                        <button type="button" data-action="next-round" id="next-round-btn" class="px-4 py-2 bg-[#F59E0B] text-[#12100E] font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                            Next Round ➔
+                        </button>
+                    </div>
                 </div>
-                <div class="flex flex-wrap items-center gap-3">
-                    <div id="round-tabs" class="flex flex-wrap gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                        <!-- Round buttons injected dynamically -->
+
+                <!-- Row 2: Dedicated Round Selector + Quick Table Filter -->
+                <div id="swiss-controls-row" class="hidden pt-3.5 border-t border-stone-800 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+                    <div class="flex items-center gap-2.5 overflow-x-auto">
+                        <span class="text-[11px] uppercase tracking-wider text-[#A8A29E] font-semibold shrink-0">Rounds:</span>
+                        <div id="round-tabs" class="flex flex-nowrap gap-1.5 bg-[#141210] p-1 rounded-xl border border-stone-800">
+                            <!-- Round buttons injected dynamically -->
+                        </div>
                     </div>
-                    <button onclick="toggleForcePairingsPanel()" id="force-pair-btn" class="hidden px-4 py-2 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer">
-                        ⚡ Force Pairings
-                    </button>
-                    <button onclick="promptRepairRound()" id="repair-round-btn" class="hidden px-4 py-2 bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer">
-                        ↻ Re-Pair Round
-                    </button>
-                    <button onclick="nextSwissRound()" id="next-round-btn" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                        Next Round ➔
-                    </button>
+
+                    <!-- Search & Status Filter for Tables -->
+                    <div class="flex items-center gap-2">
+                        <input type="search" id="swiss-search-input" placeholder="Search player or table #..."
+                            class="theme-input w-full sm:w-52 bg-[#141210] border border-stone-800 rounded-xl px-3 py-1.5 text-xs text-[#FAFAF9] focus:outline-none focus:border-[#F59E0B] transition-colors">
+                        <select id="swiss-filter-select" aria-label="Filter Matches" class="theme-input bg-[#141210] border border-stone-800 rounded-xl px-2.5 py-1.5 text-xs text-[#FAFAF9] cursor-pointer">
+                            <option value="all">All Tables</option>
+                            <option value="pending">In Progress</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
             <!-- Force Pairings Control Panel (Collapsible) -->
-            <div id="force-pairings-panel" class="hidden bg-slate-900/80 border border-indigo-500/40 rounded-2xl p-6 shadow-xl space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
+            <div id="force-pairings-panel" class="hidden theme-card bg-[#1C1917] border border-[#DC2626]/50 rounded-2xl p-6 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-stone-800 pb-3">
                     <div>
-                        <h3 class="text-base font-bold font-arcane text-indigo-300 flex items-center gap-2">
+                        <h3 class="text-base font-bold font-arcane text-[#F59E0B] flex items-center gap-2">
                             <span>⚡</span> Force Specific Pairings (Current Round)
                         </h3>
-                        <p class="text-xs text-slate-400">Lock specific matchups or a BYE for the active round, or click any player on the tables below to swap seats directly.</p>
+                        <p class="text-xs text-[#A8A29E]">Lock specific matchups or a BYE for the active round, or click any player on the tables below to swap seats directly.</p>
                     </div>
-                    <button onclick="toggleForcePairingsPanel()" class="text-xs text-slate-400 hover:text-slate-200 px-2.5 py-1 rounded-lg bg-slate-800 cursor-pointer">
+                    <button type="button" data-action="toggle-force-panel" class="text-xs text-[#A8A29E] hover:text-[#FAFAF9] px-2.5 py-1 rounded-lg bg-stone-800 cursor-pointer">
                         Close ✕
                     </button>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                     <div>
-                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Player 1</label>
-                        <select id="force-p1-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        <label for="force-p1-select" class="block text-xs uppercase tracking-wider text-[#A8A29E] font-semibold mb-1">Player 1</label>
+                        <select id="force-p1-select" class="theme-input w-full bg-[#141210] border border-stone-800 rounded-xl px-3.5 py-2 text-sm text-[#FAFAF9] focus:outline-none focus:border-[#F59E0B]">
                             <option value="">Select Player...</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-1">Opponent / BYE</label>
-                        <select id="force-p2-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                        <label for="force-p2-select" class="block text-xs uppercase tracking-wider text-[#A8A29E] font-semibold mb-1">Opponent / BYE</label>
+                        <select id="force-p2-select" class="theme-input w-full bg-[#141210] border border-stone-800 rounded-xl px-3.5 py-2 text-sm text-[#FAFAF9] focus:outline-none focus:border-[#F59E0B]">
                             <option value="">Select Opponent or BYE...</option>
                         </select>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="applyDirectForcedPairing()" class="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow transition-colors cursor-pointer">
+                        <button type="button" data-action="apply-forced-pair" class="flex-1 py-2 px-4 bg-[#DC2626] hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow transition-colors cursor-pointer">
                             Apply Direct Swap
                         </button>
-                        <button onclick="addLockedPairToList()" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-700/50 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer" title="Pin this matchup and re-solve the rest of the round">
+                        <button type="button" data-action="pin-forced-pair" class="py-2 px-3 bg-stone-800 hover:bg-stone-700 text-amber-300 border border-amber-500/40 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer" title="Pin this matchup and re-solve the rest of the round">
                             + Pin &amp; Solve
                         </button>
                     </div>
                 </div>
 
                 <!-- Pinned Forced Pairs List -->
-                <div id="pinned-pairs-container" class="hidden pt-3 border-t border-slate-800/80 space-y-2">
+                <div id="pinned-pairs-container" class="hidden pt-3 border-t border-stone-800 space-y-2">
                     <div class="flex justify-between items-center">
-                        <span class="text-xs uppercase tracking-wider text-indigo-300 font-semibold">Pinned Matchups for This Round:</span>
-                        <button onclick="clearPinnedPairs()" class="text-xs text-rose-400 hover:text-rose-300 underline cursor-pointer">Clear All Pins</button>
+                        <span class="text-xs uppercase tracking-wider text-amber-400 font-semibold">Pinned Matchups for This Round:</span>
+                        <button type="button" data-action="clear-pins" class="text-xs text-red-400 hover:text-red-300 underline cursor-pointer">Clear All Pins</button>
                     </div>
                     <div id="pinned-pairs-list" class="flex flex-wrap gap-2"></div>
                 </div>
@@ -240,23 +266,20 @@
 
         <!-- ================= TAB 3: STANDINGS ================= -->
         <section id="tab-standings" class="hidden space-y-6">
-            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+            <div class="theme-card bg-[#1C1917] border border-stone-800 rounded-2xl p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <div>
-                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
-                            <span>🏆</span> Tournament Standings &amp; Tiebreakers
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1">Calculated using official TCG metrics: Match Points, OMW%, GW%, and OGW%.</p>
-                    </div>
-                    <button onclick="proceedToElimination()" id="generate-cut-btn" class="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-bold font-arcane text-sm rounded-xl shadow-lg shadow-amber-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                    <h2 class="text-xl font-bold font-arcane text-[#F59E0B] flex items-center gap-2">
+                        <span>🏆</span> Standings &amp; Tiebreakers
+                    </h2>
+                    <button type="button" data-action="proceed-elimination" id="generate-cut-btn" class="px-5 py-2.5 bg-gradient-to-r from-[#F59E0B] to-amber-600 text-[#12100E] font-bold font-arcane text-sm rounded-xl shadow-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
                         Generate Top Cut Bracket ➔
                     </button>
                 </div>
 
-                <div class="overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950/50">
+                <div class="theme-recessed overflow-x-auto rounded-xl border border-stone-800 bg-[#141210]">
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
-                            <tr class="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                            <tr class="bg-stone-900/90 text-[#A8A29E] text-xs uppercase tracking-wider border-b border-stone-800">
                                 <th class="p-3.5 font-semibold text-center w-16">Rank</th>
                                 <th class="p-3.5 font-semibold">Player</th>
                                 <th class="p-3.5 font-semibold">Legend</th>
@@ -267,9 +290,9 @@
                                 <th class="p-3.5 font-semibold text-center" title="Opponent Game Win %">OGW%</th>
                             </tr>
                         </thead>
-                        <tbody id="standings-table-body" class="divide-y divide-slate-900">
+                        <tbody id="standings-table-body" class="divide-y divide-stone-800/70">
                             <tr>
-                                <td colspan="8" class="p-8 text-center text-slate-500 italic">No active Swiss tournament. Generate Round 1 Pairings to view standings.</td>
+                                <td colspan="8" class="p-8 text-center text-stone-500 italic">No active Swiss tournament. Generate Round 1 Pairings to view standings.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -279,29 +302,26 @@
 
         <!-- ================= TAB 4: ELIMINATION ================= -->
         <section id="tab-elimination" class="hidden space-y-6">
-            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+            <div class="theme-card bg-[#1C1917] border border-stone-800 rounded-2xl p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <div>
-                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
-                            <span>⚔️</span> Single Elimination Playoffs
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1">Single elimination bracket seeded from Swiss standings.</p>
-                    </div>
+                    <h2 class="text-xl font-bold font-arcane text-[#F59E0B] flex items-center gap-2">
+                        <span>⚔️</span> Single Elimination Playoffs
+                    </h2>
                     <div class="flex items-center gap-3">
-                        <label class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Cut Size:</label>
-                        <select id="cut-size-select" onchange="generateEliminationBracket()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-amber-500">
+                        <label for="cut-size-select" class="text-xs uppercase tracking-wider text-[#A8A29E] font-semibold">Cut Size:</label>
+                        <select id="cut-size-select" class="theme-input bg-[#141210] border border-stone-800 rounded-xl px-3 py-1.5 text-[#FAFAF9] text-sm focus:outline-none focus:border-[#F59E0B]">
                             <option value="4">Top 4</option>
                             <option value="8" selected>Top 8</option>
                             <option value="16">Top 16</option>
                         </select>
-                        <button onclick="generateEliminationBracket()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs uppercase rounded-xl cursor-pointer transition-colors">
+                        <button type="button" data-action="build-bracket" class="px-4 py-1.5 bg-[#F59E0B] text-[#12100E] font-bold text-xs uppercase rounded-xl cursor-pointer transition-colors">
                             Build / Reset Bracket
                         </button>
                     </div>
                 </div>
 
                 <div id="elimination-bracket-container" class="overflow-x-auto py-6">
-                    <p class="text-slate-500 italic text-center py-12">Complete Swiss rounds or click Build Bracket to populate playoffs.</p>
+                    <p class="text-stone-500 italic text-center py-12">Complete Swiss rounds or click Build Bracket to populate playoffs.</p>
                 </div>
             </div>
         </section>
@@ -313,28 +333,22 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Field Representation Share -->
-                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col">
-                    <div class="mb-4">
-                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
-                            <span>📊</span> Field Representation
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1">Share of registered Players piloting each Legend.</p>
-                    </div>
+                <div class="theme-card bg-[#1C1917] border border-stone-800 rounded-2xl p-6 flex flex-col">
+                    <h2 class="text-xl font-bold font-arcane text-[#F59E0B] flex items-center gap-2 mb-4">
+                        <span>📊</span> Field Representation
+                    </h2>
                     <div id="meta-bars-container" class="space-y-4 flex-grow overflow-y-auto max-h-[480px] pr-1"></div>
                 </div>
 
                 <!-- Legend Performance Matrix -->
-                <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col">
+                <div class="theme-card lg:col-span-2 bg-[#1C1917] border border-stone-800 rounded-2xl p-6 flex flex-col">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                        <div>
-                            <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
-                                <span>📈</span> Legend Performance &amp; Conversion
-                            </h2>
-                            <p class="text-xs text-slate-400 mt-1">Aggregated Swiss match/game win rates (excluding BYEs) and Top Cut conversion.</p>
-                        </div>
+                        <h2 class="text-xl font-bold font-arcane text-[#F59E0B] flex items-center gap-2">
+                            <span>📈</span> Legend Performance &amp; Conversion
+                        </h2>
                         <div class="flex items-center gap-2">
-                            <label class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Sort By:</label>
-                            <select id="meta-sort-select" onchange="renderMetaBreakdown()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-100 text-xs focus:outline-none focus:border-amber-500">
+                            <label for="meta-sort-select" class="text-xs uppercase tracking-wider text-[#A8A29E] font-semibold">Sort By:</label>
+                            <select id="meta-sort-select" class="theme-input bg-[#141210] border border-stone-800 rounded-xl px-3 py-1.5 text-[#FAFAF9] text-xs focus:outline-none focus:border-[#F59E0B]">
                                 <option value="pilots">Most Popular (Pilots)</option>
                                 <option value="winrate">Highest Match Win %</option>
                                 <option value="gamewinrate">Highest Game Win %</option>
@@ -343,10 +357,10 @@
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950/50">
+                    <div class="theme-recessed overflow-x-auto rounded-xl border border-stone-800 bg-[#141210]">
                         <table class="w-full text-left border-collapse text-sm">
                             <thead>
-                                <tr class="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                                <tr class="bg-stone-900/90 text-[#A8A29E] text-xs uppercase tracking-wider border-b border-stone-800">
                                     <th class="p-3.5 font-semibold">Legend</th>
                                     <th class="p-3.5 font-semibold text-center">Pilots</th>
                                     <th class="p-3.5 font-semibold text-center">Meta %</th>
@@ -356,7 +370,7 @@
                                     <th class="p-3.5 font-semibold text-center">Top Cut</th>
                                 </tr>
                             </thead>
-                            <tbody id="meta-table-body" class="divide-y divide-slate-900"></tbody>
+                            <tbody id="meta-table-body" class="divide-y divide-stone-800/70"></tbody>
                         </table>
                     </div>
                 </div>
@@ -365,22 +379,19 @@
 
         <!-- ================= TAB 6: WINRATE MATRIX ================= -->
         <section id="tab-matrix" class="hidden space-y-6">
-            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+            <div class="theme-card bg-[#1C1917] border border-stone-800 rounded-2xl p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <div>
-                        <h2 class="text-xl font-bold font-arcane text-amber-400 flex items-center gap-2">
-                            <span>🎯</span>  Winrate Matrix
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1">Row Legend win percentage against Column Legend across completed tournament matches.</p>
-                    </div>
+                    <h2 class="text-xl font-bold font-arcane text-[#F59E0B] flex items-center gap-2">
+                        <span>🎯</span> Winrate Matrix
+                    </h2>
                     <div class="flex flex-wrap items-center gap-4">
-                        <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-                            <input type="checkbox" id="matrix-include-elim" checked onchange="renderWinrateMatrix()" class="accent-amber-500 rounded cursor-pointer">
+                        <label class="flex items-center gap-2 text-xs text-[#A8A29E] cursor-pointer">
+                            <input type="checkbox" id="matrix-include-elim" checked class="accent-[#F59E0B] rounded cursor-pointer">
                             <span>Include Elimination Matches</span>
                         </label>
                         <div class="flex items-center gap-2">
-                            <label class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Metric:</label>
-                            <select id="matrix-metric-select" onchange="renderWinrateMatrix()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-100 text-xs focus:outline-none focus:border-amber-500">
+                            <label for="matrix-metric-select" class="text-xs uppercase tracking-wider text-[#A8A29E] font-semibold">Metric:</label>
+                            <select id="matrix-metric-select" class="theme-input bg-[#141210] border border-stone-800 rounded-xl px-3 py-1.5 text-[#FAFAF9] text-xs focus:outline-none focus:border-[#F59E0B]">
                                 <option value="match">Match Win %</option>
                                 <option value="game">Game Win % (Swiss)</option>
                             </select>
@@ -389,14 +400,14 @@
                 </div>
 
                 <!-- Legend Color Key -->
-                <div class="flex flex-wrap items-center gap-4 mb-4 text-xs text-slate-400">
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-950 border border-emerald-500/50 inline-block"></span> Favorable (&gt;55%)</span>
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-950/80 border border-amber-500/40 inline-block"></span> Even (45%–55%)</span>
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-950 border border-rose-500/50 inline-block"></span> Unfavorable (&lt;45%)</span>
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-slate-900 border border-slate-800 inline-block"></span> Mirror / No Data</span>
+                <div class="flex flex-wrap items-center gap-4 mb-4 text-xs text-[#A8A29E]">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-950/60 border border-emerald-500/50 inline-block"></span> Favorable (&gt;55%)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-950/60 border border-amber-500/40 inline-block"></span> Even (45%–55%)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-950/60 border border-[#DC2626]/50 inline-block"></span> Unfavorable (&lt;45%)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-stone-900 border border-stone-800 inline-block"></span> Mirror / No Data</span>
                 </div>
 
-                <div id="winrate-matrix-container" class="overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950/50"></div>
+                <div id="winrate-matrix-container" class="theme-recessed overflow-x-auto rounded-xl border border-stone-800 bg-[#141210]"></div>
             </div>
         </section>
 
@@ -404,14 +415,14 @@
 
     <!-- Custom Confirmation Modal -->
     <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-        <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <h3 id="modal-title" class="text-lg font-bold font-arcane text-amber-400">Confirm Action</h3>
-            <div id="modal-message" class="text-sm text-slate-300 leading-relaxed max-h-96 overflow-y-auto"></div>
+        <div class="theme-card bg-[#1C1917] border border-[#F59E0B]/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <h3 id="modal-title" class="text-lg font-bold font-arcane text-[#F59E0B]">Confirm Action</h3>
+            <div id="modal-message" class="text-sm text-[#FAFAF9] leading-relaxed max-h-96 overflow-y-auto"></div>
             <div class="flex justify-end gap-3 pt-2">
-                <button id="modal-cancel-btn" onclick="closeModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors">
+                <button type="button" id="modal-cancel-btn" class="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-[#A8A29E] text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors">
                     Cancel
                 </button>
-                <button id="modal-confirm-btn" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors">
+                <button type="button" id="modal-confirm-btn" class="px-4 py-2 rounded-xl bg-[#F59E0B] text-[#12100E] text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors">
                     Confirm
                 </button>
             </div>
@@ -419,11 +430,24 @@
     </div>
 
     <!-- Footer -->
-    <footer class="border-t border-slate-800/80 bg-[#090d14] py-6 text-center text-xs text-slate-500">
-        <p>Riftbound Tournament Manager • Built for Competitive TCG Play</p>
+    <footer class="theme-header border-t border-stone-800 py-6 text-center text-xs text-[#A8A29E]">
+        <p>RT Hub • Built for Competitive TCG Play</p>
     </footer>
 
-    <!-- Application Script (cache-busted for GitHub Pages) -->
-    <script src="app.js?v=3"></script>
+    <!-- Application Scripts (file:// & GitHub Pages compatible, cache-busted) -->
+    <script defer src="js/data/legends.js?v=7"></script>
+    <script defer src="js/utils/dom.js?v=7"></script>
+    <script defer src="js/state/store.js?v=7"></script>
+    <script defer src="js/engine/standings.js?v=7"></script>
+    <script defer src="js/engine/swiss.js?v=7"></script>
+    <script defer src="js/engine/bracket.js?v=7"></script>
+    <script defer src="js/engine/analytics.js?v=7"></script>
+    <script defer src="js/ui/playersView.js?v=7"></script>
+    <script defer src="js/ui/swissView.js?v=7"></script>
+    <script defer src="js/ui/standingsView.js?v=7"></script>
+    <script defer src="js/ui/bracketView.js?v=7"></script>
+    <script defer src="js/ui/analyticsView.js?v=7"></script>
+    <script defer src="js/main.js?v=7"></script>
+    <script defer src="app.js?v=7"></script>
 </body>
 </html>
