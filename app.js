@@ -104,7 +104,7 @@ function loadState() {
             state = {
                 players: parsed.players || [],
                 swissRounds: parsed.swissRounds || [],
-                currentRoundIndex: parsed.currentRoundIndex || 0,
+                currentRoundIndex: typeof parsed.currentRoundIndex === 'number' ? parsed.currentRoundIndex : 0,
                 customMaxRounds: parsed.customMaxRounds || null,
                 maxSwissRounds: parsed.maxSwissRounds || null,
                 eliminationBracket: parsed.eliminationBracket || null
@@ -246,21 +246,70 @@ function promptResetTournament() {
 }
 
 // ============================================================================
-// SNAPSHOT DOWNLOAD & LOAD TOURNAMENT
+// SNAPSHOT DOWNLOAD & LOAD TOURNAMENT (INCLUDES IN-PROGRESS & COMPLETED ROUNDS)
 // ============================================================================
 
 function downloadTournamentSnapshot() {
+    saveState();
+
+    const playerMap = new Map(state.players.map(p => [p.id, p]));
+
+    const serializedRounds = (state.swissRounds || []).map((r, rIdx) => {
+        const matches = (r.matches || []).map((m, mIdx) => {
+            const p1Obj = m.p1 ? playerMap.get(m.p1) : null;
+            const p2Obj = m.p2 ? playerMap.get(m.p2) : null;
+            return {
+                id: m.id || `m_${rIdx}_${mIdx}`,
+                table: mIdx + 1,
+                p1: m.p1 || null,
+                p1Name: p1Obj ? p1Obj.name : null,
+                p1Deck: p1Obj ? p1Obj.deck : null,
+                p2: m.p2 || null,
+                p2Name: p2Obj ? p2Obj.name : (m.bye ? 'BYE' : null),
+                p2Deck: p2Obj ? p2Obj.deck : null,
+                p1Points: typeof m.p1Points === 'number' ? m.p1Points : 0,
+                p2Points: typeof m.p2Points === 'number' ? m.p2Points : null,
+                winner: m.winner !== undefined ? m.winner : null,
+                p1Wins: typeof m.p1Wins === 'number' ? m.p1Wins : 0,
+                p2Wins: typeof m.p2Wins === 'number' ? m.p2Wins : 0,
+                draws: typeof m.draws === 'number' ? m.draws : 0,
+                bye: Boolean(m.bye),
+                forced: Boolean(m.forced),
+                status: m.winner !== null && m.winner !== undefined ? 'completed' : 'in_progress'
+            };
+        });
+
+        const completedCount = matches.filter(m => m.status === 'completed').length;
+
+        return {
+            round: r.round || (rIdx + 1),
+            status: completedCount === matches.length && matches.length > 0 ? 'completed' : 'in_progress',
+            completedMatches: completedCount,
+            totalMatches: matches.length,
+            stale: Boolean(r.stale),
+            forcedSpecs: Array.isArray(r.forcedSpecs) ? r.forcedSpecs : [],
+            matches
+        };
+    });
+
     const snapshot = {
         app: "Riftbound Tournament Hub",
-        version: 3,
+        version: 4,
         exportedAt: new Date().toISOString(),
         state: {
-            players: state.players || [],
-            swissRounds: state.swissRounds || [],
-            currentRoundIndex: state.currentRoundIndex || 0,
+            players: (state.players || []).map(p => ({
+                id: p.id,
+                name: p.name,
+                deck: p.deck || '',
+                active: p.active !== false
+            })),
+            swissRounds: serializedRounds,
+            currentRoundIndex: typeof state.currentRoundIndex === 'number' ? state.currentRoundIndex : Math.max(0, serializedRounds.length - 1),
             customMaxRounds: state.customMaxRounds || null,
             maxSwissRounds: state.maxSwissRounds || null,
-            eliminationBracket: state.eliminationBracket || null
+            eliminationBracket: state.eliminationBracket
+                ? JSON.parse(JSON.stringify(state.eliminationBracket))
+                : null
         }
     };
 
@@ -292,15 +341,40 @@ function loadTournamentSnapshot(event) {
                 throw new Error("Invalid tournament snapshot structure.");
             }
 
+            const restoredPlayers = loadedState.players.map((p, idx) => ({
+                id: String(p.id || 'p_' + Math.random().toString(36).substring(2, 11) + '_' + idx),
+                name: String(p.name || 'Unknown'),
+                deck: matchOfficialLegend(p.deck) || (p.deck ? String(p.deck) : ''),
+                active: p.active !== false
+            }));
+
+            const restoredRounds = loadedState.swissRounds.map((r, rIdx) => ({
+                round: typeof r.round === 'number' ? r.round : (rIdx + 1),
+                stale: Boolean(r.stale),
+                forcedSpecs: Array.isArray(r.forcedSpecs) ? r.forcedSpecs : [],
+                matches: Array.isArray(r.matches) ? r.matches.map((m, mIdx) => ({
+                    id: String(m.id || `m_${rIdx}_${mIdx}`),
+                    p1: m.p1 || null,
+                    p2: m.p2 || null,
+                    p1Points: typeof m.p1Points === 'number' ? m.p1Points : 0,
+                    p2Points: typeof m.p2Points === 'number' ? m.p2Points : null,
+                    winner: m.winner !== undefined && m.winner !== null ? m.winner : null,
+                    p1Wins: typeof m.p1Wins === 'number' ? m.p1Wins : 0,
+                    p2Wins: typeof m.p2Wins === 'number' ? m.p2Wins : 0,
+                    draws: typeof m.draws === 'number' ? m.draws : 0,
+                    bye: Boolean(m.bye),
+                    forced: Boolean(m.forced)
+                })) : []
+            }));
+
+            const restoredRoundIdx = typeof loadedState.currentRoundIndex === 'number'
+                ? Math.min(Math.max(0, loadedState.currentRoundIndex), Math.max(0, restoredRounds.length - 1))
+                : Math.max(0, restoredRounds.length - 1);
+
             state = {
-                players: loadedState.players.map(p => ({
-                    id: String(p.id || 'p_' + Math.random().toString(36).substring(2, 11)),
-                    name: String(p.name || 'Unknown'),
-                    deck: matchOfficialLegend(p.deck) || (p.deck ? String(p.deck) : ''),
-                    active: p.active !== false
-                })),
-                swissRounds: loadedState.swissRounds,
-                currentRoundIndex: typeof loadedState.currentRoundIndex === 'number' ? loadedState.currentRoundIndex : 0,
+                players: restoredPlayers,
+                swissRounds: restoredRounds,
+                currentRoundIndex: restoredRoundIdx,
                 customMaxRounds: loadedState.customMaxRounds || null,
                 maxSwissRounds: loadedState.maxSwissRounds || null,
                 eliminationBracket: loadedState.eliminationBracket || null
@@ -315,9 +389,23 @@ function loadTournamentSnapshot(event) {
             saveState();
             renderAll();
 
+            // Navigate to the most relevant active tab so current round pairings are immediately visible
+            if (state.swissRounds.length > 0) {
+                switchTab('swiss');
+            } else if (state.eliminationBracket) {
+                switchTab('elimination');
+            } else {
+                switchTab('players');
+            }
+
+            const activeRoundObj = state.swissRounds[state.currentRoundIndex];
+            const activeRoundSummary = activeRoundObj
+                ? `Active on <strong>Round ${activeRoundObj.round}</strong> (${activeRoundObj.matches.filter(m => m.winner !== null).length}/${activeRoundObj.matches.length} matches scored).`
+                : '';
+
             openModal(
                 "Tournament Snapshot Loaded",
-                `Successfully restored <strong>${state.players.length}</strong> Player(s), <strong>${state.swissRounds.length}</strong> Swiss Round(s), and ${state.eliminationBracket ? 'the Elimination Bracket' : 'no Elimination Bracket'}.`,
+                `Successfully restored <strong>${state.players.length}</strong> Player(s), <strong>${state.swissRounds.length}</strong> Swiss Round(s), and ${state.eliminationBracket ? 'the Elimination Bracket' : 'no Elimination Bracket'}.<br>${activeRoundSummary}`,
                 null,
                 true
             );
