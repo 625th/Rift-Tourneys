@@ -132,16 +132,6 @@ function formatDeckLabel(deck) {
 // SWISS ROUND COUNT CALCULATION (OFFICIAL TCG LOG2 / BRACKET THRESHOLDS)
 // ============================================================================
 
-/**
- * Standard TCG Swiss round recommendations based on player count:
- * 2-3 players:   2 rounds
- * 4-8 players:   3 rounds
- * 9-16 players:  4 rounds
- * 17-32 players: 5 rounds
- * 33-64 players: 6 rounds
- * 65-128 players: 7 rounds
- * Formula: Math.ceil(Math.log2(playerCount)) with a minimum of 2 rounds when >= 2 players.
- */
 function getRecommendedSwissRounds(playerCount) {
     if (playerCount < 2) return 0;
     if (playerCount <= 3) return 2;
@@ -167,7 +157,6 @@ function updateCustomRounds(val) {
         state.customMaxRounds = (!isNaN(parsed) && parsed >= 1) ? parsed : null;
     }
 
-    // If a tournament is already running, sync maxSwissRounds dynamically
     if (state.swissRounds.length > 0) {
         state.maxSwissRounds = state.customMaxRounds || getRecommendedSwissRounds(state.players.length);
     }
@@ -396,7 +385,6 @@ function updatePlayerDeck(playerId, newDeck) {
     if (!player) return;
     player.deck = newDeck || '';
 
-    // Sync player deck in elimination bracket if already generated
     if (state.eliminationBracket && state.eliminationBracket.rounds) {
         state.eliminationBracket.rounds.forEach(rMatches => {
             rMatches.forEach(m => {
@@ -424,15 +412,12 @@ function matchOfficialLegend(rawLegendText) {
 
     const lower = cleaned.toLowerCase();
 
-    // 1. Exact case-insensitive match
     const exact = RIFTBOUND_LEGENDS.find(l => l.toLowerCase() === lower);
     if (exact) return exact;
 
-    // 2. Match by champion short name before comma (if unique)
     const byShortName = RIFTBOUND_LEGENDS.filter(l => l.split(',')[0].trim().toLowerCase() === lower);
     if (byShortName.length === 1) return byShortName[0];
 
-    // 3. Partial / startsWith match
     const starts = RIFTBOUND_LEGENDS.filter(l => l.toLowerCase().startsWith(lower));
     if (starts.length === 1) return starts[0];
 
@@ -458,7 +443,6 @@ function importPlayersFromTxt(event) {
             let namePart = line;
             let legendPart = '';
 
-            // Support "Name - Legend" or "Name -"
             const dashMatch = line.match(/^(.*?)\s*-\s*(.*)$/);
             if (dashMatch) {
                 namePart = dashMatch[1].trim();
@@ -1346,8 +1330,8 @@ function renderSwissRounds() {
                                         </div>
                                     </div>
                                     <div class="flex gap-1.5 shrink-0">
-                                        <button ${locked ? 'disabled' : ''} onclick="setMatchResult(${activeIdx}, '${m.id}', '1-2')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '1-2' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">2-1</button>
                                         <button ${locked ? 'disabled' : ''} onclick="setMatchResult(${activeIdx}, '${m.id}', '0-2')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '0-2' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">2-0</button>
+                                        <button ${locked ? 'disabled' : ''} onclick="setMatchResult(${activeIdx}, '${m.id}', '1-2')" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '1-2' ? 'bg-amber-500 text-slate-950 shadow' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}">2-1</button>
                                     </div>
                                 </div>
                             ` : `
