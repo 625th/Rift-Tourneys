@@ -871,7 +871,7 @@
         if (isReadOnlyPage) {
             Riftbound.store.setReadOnly(true);
             bindEvents();
-            renderActiveView();
+            switchTab('swiss');
             if (gistId) {
                 loadTournamentFromGist(gistId, gistUser);
             }

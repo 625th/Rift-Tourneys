@@ -37,10 +37,10 @@
             <!-- Single-Row Navigation Tabs + Theme Toggle -->
             <div class="flex items-center gap-2.5 min-w-0">
                 <nav class="flex flex-nowrap items-center overflow-x-auto bg-[#111827] p-1 rounded-xl border border-slate-800 shadow-inner gap-1">
-                    <button type="button" data-action="switch-tab" data-tab="players" id="nav-players" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap bg-[#38BDF8] text-[#082F49] shadow cursor-pointer">
+                    <button type="button" data-action="switch-tab" data-tab="players" id="nav-players" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap text-[#94A3B8] hover:text-[#F8FAFC] cursor-pointer">
                         Players (<span id="player-count">0</span>)
                     </button>
-                    <button type="button" data-action="switch-tab" data-tab="swiss" id="nav-swiss" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap text-[#94A3B8] hover:text-[#F8FAFC] cursor-pointer">
+                    <button type="button" data-action="switch-tab" data-tab="swiss" id="nav-swiss" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap bg-[#38BDF8] text-[#082F49] shadow cursor-pointer">
                         Swiss
                     </button>
                     <button type="button" data-action="switch-tab" data-tab="standings" id="nav-standings" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap text-[#94A3B8] hover:text-[#F8FAFC] cursor-pointer">
@@ -70,7 +70,7 @@
     <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
 
         <!-- ================= TAB 1: PLAYERS ================= -->
-        <section id="tab-players" class="space-y-6">
+        <section id="tab-players" class="hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Registration Card (Read-Only in Ukraine Open) -->
                 <div class="theme-card bg-[#111827] border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
@@ -177,7 +177,7 @@
         </section>
 
         <!-- ================= TAB 2: SWISS PAIRINGS ================= -->
-        <section id="tab-swiss" class="hidden space-y-6">
+        <section id="tab-swiss" class="space-y-6">
             <div class="theme-card bg-[#111827] border border-slate-800 p-5 sm:p-6 rounded-2xl space-y-4">
                 <!-- Row 1: Title, Round & Progress Badges + Primary Actions -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -417,7 +417,7 @@
     <script defer src="js/ui/standingsView.js?v=9"></script>
     <script defer src="js/ui/bracketView.js?v=9"></script>
     <script defer src="js/ui/analyticsView.js?v=9"></script>
-    <script defer src="js/main.js?v=10"></script>
+    <script defer src="js/main.js?v=11"></script>
     <script defer src="app.js?v=9"></script>
 </body>
 </html>
