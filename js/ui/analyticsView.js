@@ -72,7 +72,7 @@
                     <span class="font-mono text-amber-400 shrink-0">${item.pilots} (${item.metaShare.toFixed(1)}%)</span>
                 </div>
                 <div class="w-full h-2.5 bg-[#141210] rounded-full overflow-hidden border border-stone-800">
-                    <div class="h-full bg-gradient-to-r from-[#DC2626] via-amber-600 to-[#F59E0B] rounded-full transition-all duration-300" style="width: ${Math.max(item.metaShare, 3)}%"></div>
+                    <div class="theme-progress-bar h-full rounded-full transition-all duration-300" style="width: ${Math.max(item.metaShare, 3)}%"></div>
                 </div>
                 <div class="text-[11px] text-stone-500 truncate">Players: ${item.pilotNames.map(n => escapeHtml(n)).join(', ')}</div>
             </div>
@@ -106,7 +106,7 @@
                 : 'text-[#FAFAF9]';
 
             return `
-                <tr class="hover:bg-stone-900/50 transition-colors">
+                <tr class="border-b border-stone-800 last:border-b-0 hover:bg-stone-900/50 transition-colors">
                     <td class="p-3.5">
                         <div class="font-semibold text-amber-400/90">${escapeHtml(item.legend)}</div>
                         <div class="text-[11px] text-stone-500 truncate max-w-xs">${item.pilotNames.map(n => escapeHtml(n)).join(', ')}</div>
@@ -200,7 +200,7 @@
                             : `${totalMW}-${totalML}${totalMD > 0 ? `-${totalMD}` : ''}`;
 
                         return `
-                            <tr class="hover:bg-stone-900/30 transition-colors">
+                            <tr class="border-b border-stone-800 last:border-b-0 hover:bg-stone-900/30 transition-colors">
                                 <td class="p-3.5 font-semibold sticky left-0 bg-[#141210] z-10 border-r border-stone-800" title="${escapeHtml(rowLegend)}">
                                     <div class="text-[#FAFAF9] truncate">${escapeHtml(shortLegendName(rowLegend))}</div>
                                     <div class="text-[10px] text-amber-400/80 font-normal truncate">${escapeHtml(rowLegend.split(',')[1] || '')}</div>

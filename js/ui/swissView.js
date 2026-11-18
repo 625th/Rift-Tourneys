@@ -77,6 +77,7 @@
     }
 
     function toggleForcePairingsPanel() {
+        if (Riftbound.store.isReadOnly()) return;
         const panel = document.getElementById('force-pairings-panel');
         if (!panel) return;
         panel.classList.toggle('hidden');
@@ -86,7 +87,7 @@
         }
     }
 
-    function renderBannersHtml(activeIdx, activeRound, locked, maxRounds, isFinalSwissRound, allComplete, playerMap, selectedSwapSlot) {
+    function renderBannersHtml(activeIdx, activeRound, locked, readOnly, maxRounds, isFinalSwissRound, allComplete, playerMap, selectedSwapSlot) {
         const { escapeHtml } = Riftbound.dom;
         let html = '';
 
@@ -104,7 +105,7 @@
             `;
         }
 
-        if (locked) {
+        if (locked && !readOnly) {
             html += `
                 <div class="theme-card bg-[#1C1917] border border-stone-700/80 rounded-xl p-4 flex items-center justify-between text-xs text-[#A8A29E]">
                     <div class="flex items-center gap-2.5">
@@ -115,7 +116,7 @@
             `;
         }
 
-        if (selectedSwapSlot && selectedSwapSlot.roundIdx === activeIdx && !locked) {
+        if (selectedSwapSlot && selectedSwapSlot.roundIdx === activeIdx && !locked && !readOnly) {
             const selMatch = activeRound.matches.find(m => m.id === selectedSwapSlot.matchId);
             const selPlayerId = selMatch ? selMatch[selectedSwapSlot.slot] : null;
             const selName = selPlayerId ? (playerMap.get(selPlayerId)?.name || 'Player') : 'BYE Slot';
@@ -132,7 +133,7 @@
             `;
         }
 
-        if (activeRound.stale && !locked) {
+        if (activeRound.stale && !locked && !readOnly) {
             html += `
                 <div class="bg-amber-950/60 border border-amber-500/50 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-200">
                     <div class="flex items-center gap-2.5">
@@ -149,8 +150,9 @@
         return html;
     }
 
-    function renderMatchCard(m, mIdx, activeIdx, locked, playerMap, statMap, selectedSwapSlot) {
+    function renderMatchCard(m, mIdx, activeIdx, locked, readOnly, playerMap, statMap, selectedSwapSlot) {
         const { escapeHtml } = Riftbound.dom;
+        const controlsDisabled = locked || readOnly;
 
         const p1 = playerMap.get(m.p1);
         const p2 = m.p2 ? playerMap.get(m.p2) : null;
@@ -165,7 +167,6 @@
 
         return `
             <div class="theme-card bg-[#1C1917] border ${isComplete ? 'border-[#F59E0B]/40' : 'border-stone-800'} rounded-2xl p-4 sm:p-5 relative">
-                <!-- Card Header: Table #, Badges, Draw / Clear Controls & Status -->
                 <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-mono font-semibold uppercase tracking-wider text-[#A8A29E]">Table #${mIdx + 1}</span>
@@ -174,16 +175,16 @@
                     </div>
                     <div class="flex items-center gap-1.5">
                         ${!m.bye ? `
-                            ${isComplete && !locked ? `
+                            ${isComplete && !controlsDisabled ? `
                                 <button type="button" data-action="clear-score" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" title="Reset match score" class="text-[11px] px-2 py-0.5 rounded-lg border border-stone-800 text-[#A8A29E] hover:text-red-300 hover:border-[#DC2626]/60 transition-all cursor-pointer">
                                     Clear
                                 </button>
                             ` : ''}
-                            <button type="button" ${locked ? 'disabled' : ''} data-action="set-score" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-score="1-1" class="text-[11px] px-2.5 py-0.5 rounded-lg border transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${m.winner === 'draw' ? 'bg-[#F59E0B] text-[#12100E] border-[#F59E0B] font-bold shadow' : 'border-stone-800 text-[#A8A29E] hover:text-[#FAFAF9] hover:border-stone-700'}">
+                            <button type="button" ${controlsDisabled ? 'disabled' : ''} data-action="set-score" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-score="1-1" class="text-[11px] px-2.5 py-0.5 rounded-lg border transition-all ${controlsDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${m.winner === 'draw' ? 'bg-[#F59E0B] text-[#12100E] border-[#F59E0B] font-bold shadow' : 'border-stone-800 text-[#A8A29E] hover:text-[#FAFAF9] hover:border-stone-700'}">
                                 1-1 Draw
                             </button>
                         ` : ''}
-                        ${locked ? '<span class="text-[11px] text-stone-500 flex items-center gap-1">🔒</span>' : ''}
+                        ${locked && !readOnly ? '<span class="text-[11px] text-stone-500 flex items-center gap-1">🔒</span>' : ''}
                         <span class="text-[11px] px-2.5 py-0.5 rounded-full font-medium ${isComplete ? 'bg-amber-950/60 text-amber-300 border border-[#F59E0B]/40' : 'bg-stone-800 text-[#A8A29E] border border-stone-700'}">
                             ${isComplete ? `Final (${m.p1Wins}-${m.p2Wins})` : 'In Progress'}
                         </span>
@@ -193,7 +194,7 @@
                 <div class="space-y-2.5">
                     <div class="flex justify-between items-center p-3 rounded-xl bg-[#141210] border transition-all ${isP1Selected ? 'border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-red-950/30' : m.winner === m.p1 ? 'border-[#F59E0B]/70 bg-[#F59E0B]/10' : 'border-stone-800'}">
                         <div class="flex items-center gap-2 min-w-0 pr-2">
-                            ${!locked ? `<button type="button" data-action="swap-seat" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-slot="p1" title="Click to swap this Player with another seat" aria-label="Swap seat" class="px-1.5 py-1 rounded bg-[#1C1917] hover:bg-red-950/80 text-[#A8A29E] hover:text-red-200 border border-stone-800 text-xs cursor-pointer shrink-0 transition-colors">⇄</button>` : ''}
+                            ${!controlsDisabled ? `<button type="button" data-action="swap-seat" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-slot="p1" title="Click to swap this Player with another seat" aria-label="Swap seat" class="px-1.5 py-1 rounded bg-[#1C1917] hover:bg-red-950/80 text-[#A8A29E] hover:text-red-200 border border-stone-800 text-xs cursor-pointer shrink-0 transition-colors">⇄</button>` : ''}
                             <div class="truncate">
                                 <div class="flex items-center gap-2">
                                     <span class="font-bold text-[#FAFAF9] truncate">${p1 ? escapeHtml(p1.name) : 'Unknown'}</span>
@@ -204,8 +205,8 @@
                         </div>
                         ${!m.bye ? `
                             <div class="flex gap-1.5 shrink-0">
-                                <button type="button" ${locked ? 'disabled' : ''} data-action="set-score" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-score="2-0" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '2-0' ? 'bg-[#F59E0B] text-[#12100E] shadow' : 'bg-stone-800 text-[#FAFAF9] hover:bg-stone-700'}">2-0</button>
-                                <button type="button" ${locked ? 'disabled' : ''} data-action="set-score" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-score="2-1" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '2-1' ? 'bg-[#F59E0B] text-[#12100E] shadow' : 'bg-stone-800 text-[#FAFAF9] hover:bg-stone-700'}">2-1</button>
+                                <button type="button" ${controlsDisabled ? 'disabled' : ''} data-action="set-score" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-score="2-0" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${controlsDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '2-0' ? 'bg-[#F59E0B] text-[#12100E] shadow' : 'bg-stone-800 text-[#FAFAF9] hover:bg-stone-700'}">2-0</button>
+                                <button type="button" ${controlsDisabled ? 'disabled' : ''} data-action="set-score" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-score="2-1" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${controlsDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '2-1' ? 'bg-[#F59E0B] text-[#12100E] shadow' : 'bg-stone-800 text-[#FAFAF9] hover:bg-stone-700'}">2-1</button>
                             </div>
                         ` : '<span class="text-xs font-bold text-amber-400 px-2.5 py-1 bg-amber-950/50 rounded-lg border border-amber-500/40 shrink-0">2-0 (BYE)</span>'}
                     </div>
@@ -213,7 +214,7 @@
                     ${p2 ? `
                         <div class="flex justify-between items-center p-3 rounded-xl bg-[#141210] border transition-all ${isP2Selected ? 'border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-red-950/30' : m.winner === m.p2 ? 'border-[#F59E0B]/70 bg-[#F59E0B]/10' : 'border-stone-800'}">
                             <div class="flex items-center gap-2 min-w-0 pr-2">
-                                ${!locked ? `<button type="button" data-action="swap-seat" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-slot="p2" title="Click to swap this Player with another seat" aria-label="Swap seat" class="px-1.5 py-1 rounded bg-[#1C1917] hover:bg-red-950/80 text-[#A8A29E] hover:text-red-200 border border-stone-800 text-xs cursor-pointer shrink-0 transition-colors">⇄</button>` : ''}
+                                ${!controlsDisabled ? `<button type="button" data-action="swap-seat" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-slot="p2" title="Click to swap this Player with another seat" aria-label="Swap seat" class="px-1.5 py-1 rounded bg-[#1C1917] hover:bg-red-950/80 text-[#A8A29E] hover:text-red-200 border border-stone-800 text-xs cursor-pointer shrink-0 transition-colors">⇄</button>` : ''}
                                 <div class="truncate">
                                     <div class="flex items-center gap-2">
                                         <span class="font-bold text-[#FAFAF9] truncate">${escapeHtml(p2.name)}</span>
@@ -223,8 +224,8 @@
                                 </div>
                             </div>
                             <div class="flex gap-1.5 shrink-0">
-                                <button type="button" ${locked ? 'disabled' : ''} data-action="set-score" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-score="0-2" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '0-2' ? 'bg-[#F59E0B] text-[#12100E] shadow' : 'bg-stone-800 text-[#FAFAF9] hover:bg-stone-700'}">2-0</button>
-                                <button type="button" ${locked ? 'disabled' : ''} data-action="set-score" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-score="1-2" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '1-2' ? 'bg-[#F59E0B] text-[#12100E] shadow' : 'bg-stone-800 text-[#FAFAF9] hover:bg-stone-700'}">2-1</button>
+                                <button type="button" ${controlsDisabled ? 'disabled' : ''} data-action="set-score" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-score="0-2" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${controlsDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '0-2' ? 'bg-[#F59E0B] text-[#12100E] shadow' : 'bg-stone-800 text-[#FAFAF9] hover:bg-stone-700'}">2-0</button>
+                                <button type="button" ${controlsDisabled ? 'disabled' : ''} data-action="set-score" data-round-idx="${activeIdx}" data-match-id="${escapeHtml(m.id)}" data-score="1-2" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${controlsDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${currentScore === '1-2' ? 'bg-[#F59E0B] text-[#12100E] shadow' : 'bg-stone-800 text-[#FAFAF9] hover:bg-stone-700'}">2-1</button>
                             </div>
                         </div>
                     ` : `
@@ -240,9 +241,10 @@
     function renderSwissRounds() {
         const { calculateStandingsData } = Riftbound.standings;
         const { isRoundLocked } = Riftbound.swiss;
-        const { getState, getSelectedSwapSlot, getEffectiveMaxRounds } = Riftbound.store;
+        const { getState, getSelectedSwapSlot, getEffectiveMaxRounds, isReadOnly } = Riftbound.store;
         const state = getState();
         const selectedSwapSlot = getSelectedSwapSlot();
+        const readOnly = isReadOnly();
 
         const controlsRow = document.getElementById('swiss-controls-row');
         const roundTabsContainer = document.getElementById('round-tabs');
@@ -271,7 +273,7 @@
             container.innerHTML = `
                 <div class="theme-card bg-[#1C1917] border border-stone-800 rounded-2xl p-12 text-center text-stone-500">
                     <p class="mb-4">No Swiss rounds generated yet.</p>
-                    <button type="button" data-action="switch-tab" data-tab="players" class="px-5 py-2.5 bg-[#F59E0B] text-[#12100E] font-bold rounded-xl cursor-pointer">Go to Players &amp; Start</button>
+                    <button type="button" data-action="switch-tab" data-tab="players" class="px-5 py-2.5 bg-[#F59E0B] text-[#12100E] font-bold rounded-xl cursor-pointer">Go to Players</button>
                 </div>`;
             nextRoundBtn.disabled = true;
             nextRoundBtn.textContent = 'Next Round ➔';
@@ -302,12 +304,21 @@
             progressBadge.textContent = `${completedInActive} / ${totalInActive} Scored`;
         }
 
-        if (!locked) {
+        if (!locked && !readOnly) {
             repairRoundBtn.classList.remove('hidden');
+            repairRoundBtn.disabled = false;
             repairRoundBtn.textContent = `↻ Re-Pair Round ${activeRound.round}`;
             forcePairBtn.classList.remove('hidden');
+            forcePairBtn.disabled = false;
             populateForcePairSelects();
             renderPinnedPairsList();
+        } else if (readOnly) {
+            repairRoundBtn.classList.remove('hidden');
+            repairRoundBtn.disabled = true;
+            repairRoundBtn.textContent = `↻ Re-Pair Round ${activeRound.round}`;
+            forcePairBtn.classList.remove('hidden');
+            forcePairBtn.disabled = true;
+            if (forcePanel) forcePanel.classList.add('hidden');
         } else {
             repairRoundBtn.classList.add('hidden');
             forcePairBtn.classList.add('hidden');
@@ -321,8 +332,8 @@
             return `
                 <button type="button" data-action="select-round" data-round-idx="${idx}" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${isCurrent ? 'bg-[#F59E0B] text-[#12100E] shadow' : 'text-[#A8A29E] hover:text-[#FAFAF9]'}">
                     <span>Round ${r.round}</span>
-                    ${rLocked ? '<span title="Locked (2+ rounds passed)">🔒</span>' : rDone ? '<span title="All matches scored">✓</span>' : ''}
-                    ${r.stale ? '<span title="Previous round results changed — Re-pair recommended" class="text-amber-300">⚠️</span>' : ''}
+                    ${rLocked && !readOnly ? '<span title="Locked (2+ rounds passed)">🔒</span>' : rDone ? '<span title="All matches scored">✓</span>' : ''}
+                    ${r.stale && !readOnly ? '<span title="Previous round results changed — Re-pair recommended" class="text-amber-300">⚠️</span>' : ''}
                 </button>
             `;
         }).join('');
@@ -336,6 +347,7 @@
             activeIdx,
             activeRound,
             locked,
+            readOnly,
             maxRounds,
             isFinalSwissRound,
             allComplete,
@@ -371,12 +383,12 @@
         } else {
             container.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    ${filteredMatches.map(({ m, mIdx }) => renderMatchCard(m, mIdx, activeIdx, locked, playerMap, statMap, selectedSwapSlot)).join('')}
+                    ${filteredMatches.map(({ m, mIdx }) => renderMatchCard(m, mIdx, activeIdx, locked, readOnly, playerMap, statMap, selectedSwapSlot)).join('')}
                 </div>
             `;
         }
 
-        nextRoundBtn.disabled = !allComplete;
+        nextRoundBtn.disabled = readOnly || !allComplete;
         nextRoundBtn.textContent = isFinalSwissRound
             ? 'Finish Swiss (Standings) ➔'
             : `Next Round (${state.swissRounds.length + 1}/${maxRounds}) ➔`;

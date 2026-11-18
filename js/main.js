@@ -91,6 +91,7 @@
     // --- Player Actions ---
     function handleAddPlayer(e) {
         e.preventDefault();
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         const nameInput = document.getElementById('p-name');
         const deckInput = document.getElementById('p-deck');
@@ -111,6 +112,7 @@
     }
 
     function handleUpdatePlayerDeck(playerId, newDeck) {
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         const player = state.players.find(p => p.id === playerId);
         if (!player) return;
@@ -131,6 +133,7 @@
     }
 
     function handleRemovePlayer(id) {
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         state.players = state.players.filter(p => p.id !== id);
         Riftbound.store.saveState();
@@ -138,6 +141,7 @@
     }
 
     function handleTogglePlayerActive(playerId) {
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         const player = state.players.find(p => p.id === playerId);
         if (!player) return;
@@ -147,6 +151,7 @@
     }
 
     function handleImportPlayersFromTxt(event) {
+        if (Riftbound.store.isReadOnly()) return;
         const file = event.target.files && event.target.files[0];
         if (!file) return;
 
@@ -211,6 +216,7 @@
     }
 
     function handleUpdateCustomRounds(val) {
+        if (Riftbound.store.isReadOnly()) return;
         const { getState, getRecommendedSwissRounds, saveState } = Riftbound.store;
         const state = getState();
         const trimmed = String(val).trim();
@@ -248,6 +254,7 @@
     }
 
     function handleLoadSnapshot(event) {
+        if (Riftbound.store.isReadOnly()) return;
         const file = event.target.files && event.target.files[0];
         if (!file) return;
 
@@ -298,6 +305,7 @@
     }
 
     function handlePromptResetTournament() {
+        if (Riftbound.store.isReadOnly()) return;
         Riftbound.dom.openModal(
             'Reset Entire Tournament',
             'Are you sure you want to clear all registered players, Swiss rounds, standings, and playoff brackets?',
@@ -310,6 +318,7 @@
 
     // --- Swiss Actions ---
     function handleGenerateSwissPairings() {
+        if (Riftbound.store.isReadOnly()) return;
         const { getState, getRecommendedSwissRounds, setSelectedSwapSlot, saveState } = Riftbound.store;
         const state = getState();
         if (state.players.filter(p => p.active !== false).length < 2) return;
@@ -338,6 +347,7 @@
     }
 
     function handleNextSwissRound() {
+        if (Riftbound.store.isReadOnly()) return;
         const { getState, getEffectiveMaxRounds, setSelectedSwapSlot, saveState } = Riftbound.store;
         const state = getState();
         const latestRound = state.swissRounds[state.swissRounds.length - 1];
@@ -375,6 +385,7 @@
     }
 
     function handlePromptRepairRound(targetIdx = Riftbound.store.getState().currentRoundIndex) {
+        if (Riftbound.store.isReadOnly()) return;
         const { getState, setSelectedSwapSlot, saveState } = Riftbound.store;
         const state = getState();
         if (targetIdx < 0 || Riftbound.swiss.isRoundLocked(targetIdx, state.swissRounds)) return;
@@ -402,6 +413,7 @@
     }
 
     function handleSetMatchResult(roundIdx, matchId, scoreType) {
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         if (Riftbound.swiss.isRoundLocked(roundIdx, state.swissRounds)) return;
 
@@ -438,6 +450,7 @@
     }
 
     function handleClearMatchResult(roundIdx, matchId) {
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         if (Riftbound.swiss.isRoundLocked(roundIdx, state.swissRounds)) return;
 
@@ -462,6 +475,7 @@
     }
 
     function executeSeatSwap(roundIdx, matchIdA, slotA, matchIdB, slotB) {
+        if (Riftbound.store.isReadOnly()) return;
         const { getState, setSelectedSwapSlot, saveState } = Riftbound.store;
         const state = getState();
         if (Riftbound.swiss.isRoundLocked(roundIdx, state.swissRounds)) return;
@@ -493,6 +507,7 @@
     }
 
     function handleSeatClick(roundIdx, matchId, slot) {
+        if (Riftbound.store.isReadOnly()) return;
         const { getState, getSelectedSwapSlot, setSelectedSwapSlot } = Riftbound.store;
         const state = getState();
         const selectedSwapSlot = getSelectedSwapSlot();
@@ -514,6 +529,7 @@
     }
 
     function handleApplyDirectForcedPairing() {
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         const activeIdx = state.currentRoundIndex;
         if (Riftbound.swiss.isRoundLocked(activeIdx, state.swissRounds)) return;
@@ -564,6 +580,7 @@
     }
 
     function handleAddLockedPair() {
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         const activeIdx = state.currentRoundIndex;
         if (Riftbound.swiss.isRoundLocked(activeIdx, state.swissRounds)) return;
@@ -592,6 +609,7 @@
     }
 
     function handleRemovePinnedPair(idx) {
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         const activeIdx = state.currentRoundIndex;
         if (Riftbound.swiss.isRoundLocked(activeIdx, state.swissRounds)) return;
@@ -605,6 +623,7 @@
     }
 
     function handleClearPinnedPairs() {
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         const activeIdx = state.currentRoundIndex;
         if (Riftbound.swiss.isRoundLocked(activeIdx, state.swissRounds)) return;
@@ -619,6 +638,7 @@
 
     // --- Elimination Actions ---
     function handleGenerateEliminationBracket() {
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         const cutSelect = document.getElementById('cut-size-select');
         const cutSize = cutSelect ? parseInt(cutSelect.value, 10) : 8;
@@ -637,17 +657,87 @@
     }
 
     function handleProceedToElimination() {
+        if (Riftbound.store.isReadOnly()) return;
         switchTab('elimination');
         handleGenerateEliminationBracket();
     }
 
     function handleAdvanceEliminationWinner(roundIdx, matchIdx, playerSlot) {
+        if (Riftbound.store.isReadOnly()) return;
         const state = Riftbound.store.getState();
         if (!Riftbound.bracket.advanceEliminationWinnerInBracket(state.eliminationBracket, roundIdx, matchIdx, playerSlot)) {
             return;
         }
         Riftbound.store.saveState();
         renderActiveView();
+    }
+
+    // --- Remote Gist Tournament Loader (Read-Only Showcase Mode) ---
+    async function loadTournamentFromGist(gistId, gistUser = '625th') {
+        const rawUrl = `https://gist.githubusercontent.com/${gistUser}/${gistId}/raw`;
+        const apiUrl = `https://api.github.com/gists/${gistId}`;
+
+        try {
+            let jsonText = null;
+            try {
+                const rawRes = await fetch(rawUrl, { cache: 'no-store' });
+                if (rawRes.ok) {
+                    jsonText = await rawRes.text();
+                }
+            } catch (_) {
+                // Fallback to GitHub Gist API below
+            }
+
+            if (!jsonText) {
+                const apiRes = await fetch(apiUrl, { cache: 'no-store' });
+                if (!apiRes.ok) {
+                    throw new Error(`GitHub Gist request failed (${apiRes.status})`);
+                }
+                const gistData = await apiRes.json();
+                const files = gistData && gistData.files ? Object.values(gistData.files) : [];
+                if (files.length === 0) {
+                    throw new Error('No files found in the specified GitHub Gist.');
+                }
+                if (files[0].content) {
+                    jsonText = files[0].content;
+                } else if (files[0].raw_url) {
+                    const fileRes = await fetch(files[0].raw_url, { cache: 'no-store' });
+                    jsonText = await fileRes.text();
+                }
+            }
+
+            const restored = Riftbound.store.restoreFromSnapshotJson(jsonText, true);
+
+            if (restored.eliminationBracket && restored.eliminationBracket.cutSize) {
+                const cutSelect = document.getElementById('cut-size-select');
+                if (cutSelect) cutSelect.value = String(restored.eliminationBracket.cutSize);
+            }
+
+            renderActiveView();
+        } catch (err) {
+            const { escapeHtml, openModal } = Riftbound.dom;
+            openModal(
+                'Failed to Load Ukraine Open Data',
+                `Could not fetch tournament data from GitHub Gist.<br><br><span class="text-xs text-red-400 font-mono">${escapeHtml(err.message)}</span>`,
+                null,
+                true
+            );
+        }
+    }
+
+    function handleOpenUkraineOpen() {
+        const isFileProtocol = window.location.protocol === 'file:';
+        window.location.href = isFileProtocol ? 'ukraineopen.html' : 'ukraineopen';
+    }
+
+    function handleOpenMainHub() {
+        const isFileProtocol = window.location.protocol === 'file:';
+        const inSubfolder = window.location.pathname.replace(/\/+$/, '').endsWith('/ukraineopen');
+        if (isFileProtocol) {
+            window.location.href = inSubfolder ? '../index.html' : 'index.html';
+        } else {
+            window.location.href = inSubfolder ? '../' : './';
+        }
     }
 
     // --- Event Binding ---
@@ -672,7 +762,7 @@
 
         document.addEventListener('click', e => {
             const trigger = e.target.closest('[data-action]');
-            if (!trigger) return;
+            if (!trigger || trigger.disabled) return;
 
             const { action } = trigger.dataset;
             const state = Riftbound.store.getState();
@@ -681,11 +771,19 @@
                 case 'toggle-theme':
                     handleToggleTheme();
                     break;
+                case 'open-ukraine-open':
+                    handleOpenUkraineOpen();
+                    break;
+                case 'open-main-hub':
+                    handleOpenMainHub();
+                    break;
                 case 'switch-tab':
                     switchTab(trigger.dataset.tab);
                     break;
                 case 'trigger-file-input':
-                    document.getElementById(trigger.dataset.target)?.click();
+                    if (!Riftbound.store.isReadOnly()) {
+                        document.getElementById(trigger.dataset.target)?.click();
+                    }
                     break;
                 case 'download-snapshot':
                     handleDownloadSnapshot();
@@ -764,9 +862,24 @@
     function initApp() {
         initTheme();
         Riftbound.playersView.populateLegendDropdown();
-        Riftbound.store.loadState();
-        bindEvents();
-        renderActiveView();
+
+        const isReadOnlyPage = document.body.dataset.readonly === 'true';
+        const gistId = document.body.dataset.gistId;
+        const gistUser = document.body.dataset.gistUser || '625th';
+
+        if (isReadOnlyPage) {
+            Riftbound.store.setReadOnly(true);
+            bindEvents();
+            renderActiveView();
+            if (gistId) {
+                loadTournamentFromGist(gistId, gistUser);
+            }
+        } else {
+            Riftbound.store.setReadOnly(false);
+            Riftbound.store.loadState();
+            bindEvents();
+            renderActiveView();
+        }
     }
 
     Riftbound.main = {

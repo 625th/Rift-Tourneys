@@ -16,6 +16,15 @@
 
     let state = createInitialState();
     let selectedSwapSlot = null; // { roundIdx, matchId, slot: 'p1' | 'p2' }
+    let readOnlyMode = false;
+
+    function isReadOnly() {
+        return readOnlyMode;
+    }
+
+    function setReadOnly(val) {
+        readOnlyMode = Boolean(val);
+    }
 
     function getState() {
         return state;
@@ -26,14 +35,17 @@
     }
 
     function setSelectedSwapSlot(slotObj) {
+        if (readOnlyMode) return;
         selectedSwapSlot = slotObj;
     }
 
     function saveState() {
+        if (readOnlyMode) return;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
 
     function loadState() {
+        if (readOnlyMode) return;
         const saved = localStorage.getItem(STORAGE_KEY);
         if (!saved) return;
 
@@ -53,6 +65,7 @@
     }
 
     function resetState() {
+        if (readOnlyMode) return;
         state = createInitialState();
         selectedSwapSlot = null;
         saveState();
@@ -75,7 +88,9 @@
     }
 
     function createSnapshotData() {
-        saveState();
+        if (!readOnlyMode) {
+            saveState();
+        }
         const playerMap = new Map(state.players.map(p => [p.id, p]));
 
         const serializedRounds = (state.swissRounds || []).map((r, rIdx) => {
@@ -140,9 +155,9 @@
         };
     }
 
-    function restoreFromSnapshotJson(jsonText) {
+    function restoreFromSnapshotJson(jsonText, skipLocalStorage = false) {
         const { matchOfficialLegend } = Riftbound.legends;
-        const parsed = JSON.parse(jsonText);
+        const parsed = typeof jsonText === 'string' ? JSON.parse(jsonText) : jsonText;
         const loadedState = parsed && parsed.state ? parsed.state : parsed;
 
         if (!loadedState || !Array.isArray(loadedState.players) || !Array.isArray(loadedState.swissRounds)) {
@@ -189,11 +204,15 @@
         };
 
         selectedSwapSlot = null;
-        saveState();
+        if (!skipLocalStorage && !readOnlyMode) {
+            saveState();
+        }
         return state;
     }
 
     Riftbound.store = {
+        isReadOnly,
+        setReadOnly,
         getState,
         getSelectedSwapSlot,
         setSelectedSwapSlot,

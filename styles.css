@@ -78,6 +78,15 @@ h1, h2, h3, .font-arcane {
     color: transparent;
 }
 
+.theme-progress-bar {
+    background-image: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)) !important;
+}
+
+.theme-checkbox,
+.accent-\[\#F59E0B\] {
+    accent-color: var(--accent-primary) !important;
+}
+
 .theme-card {
     background-color: var(--bg-surface) !important;
     border-color: var(--border-subtle) !important;
@@ -126,7 +135,7 @@ h1, h2, h3, .font-arcane {
     background-color: var(--bg-surface-elevated) !important;
 }
 
-.hover\:bg-stone-700:hover {
+.hover\:bg-stone-700:hover:not(:disabled) {
     filter: brightness(1.12);
 }
 
@@ -143,7 +152,9 @@ h1, h2, h3, .font-arcane {
     border-color: var(--border-subtle) !important;
 }
 
-.divide-stone-800\/70 > :not([hidden]) ~ :not([hidden]) {
+/* Uniform table row divider lines across all rows (including under row 1) in both themes */
+.divide-stone-800\/70 > *,
+.divide-y > * {
     border-color: var(--border-subtle) !important;
 }
 

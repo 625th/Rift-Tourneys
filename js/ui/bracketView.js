@@ -11,21 +11,25 @@
 
     function renderEliminationBracket() {
         const { formatDeckLabel } = Riftbound.legends;
-        const { getState } = Riftbound.store;
+        const { getState, isReadOnly } = Riftbound.store;
         const { escapeHtml } = Riftbound.dom;
         const state = getState();
+        const readOnly = isReadOnly();
 
         const container = document.getElementById('elimination-bracket-container');
         if (!container) return;
 
+        const cutSelect = document.getElementById('cut-size-select');
+        if (cutSelect) {
+            cutSelect.disabled = readOnly;
+            if (state.eliminationBracket && state.eliminationBracket.cutSize) {
+                cutSelect.value = String(state.eliminationBracket.cutSize);
+            }
+        }
+
         if (!state.eliminationBracket || !state.eliminationBracket.rounds) {
             container.innerHTML = '<p class="text-stone-500 italic text-center py-12">Complete Swiss rounds or click Build / Reset Bracket to populate playoffs.</p>';
             return;
-        }
-
-        const cutSelect = document.getElementById('cut-size-select');
-        if (cutSelect && state.eliminationBracket.cutSize) {
-            cutSelect.value = String(state.eliminationBracket.cutSize);
         }
 
         const { rounds } = state.eliminationBracket;
@@ -58,10 +62,12 @@
                                 const p2 = m.p2;
                                 const p1Won = m.winner && p1 && m.winner.id === p1.id;
                                 const p2Won = m.winner && p2 && m.winner.id === p2.id;
+                                const canClickP1 = !readOnly && p1 && p1.id;
+                                const canClickP2 = !readOnly && p2 && p2.id;
 
                                 return `
                                     <div class="bg-[#141210] border border-stone-800 rounded-xl p-3.5 shadow-md space-y-2">
-                                        <div data-action="advance-elim" data-round-idx="${rIdx}" data-match-idx="${mIdx}" data-slot="p1" class="flex justify-between items-center p-2.5 rounded-lg border transition-all ${p1 && p1.id ? 'cursor-pointer hover:border-[#F59E0B]/50' : 'opacity-50'} ${p1Won ? 'border-[#F59E0B] bg-[#F59E0B]/10' : 'border-stone-800/80 bg-[#1C1917]'}">
+                                        <div ${canClickP1 ? `data-action="advance-elim" data-round-idx="${rIdx}" data-match-idx="${mIdx}" data-slot="p1"` : ''} class="flex justify-between items-center p-2.5 rounded-lg border transition-all ${canClickP1 ? 'cursor-pointer hover:border-[#F59E0B]/50' : p1 && p1.id ? 'cursor-default' : 'opacity-50'} ${p1Won ? 'border-[#F59E0B] bg-[#F59E0B]/10' : 'border-stone-800/80 bg-[#1C1917]'}">
                                             <div class="truncate pr-2">
                                                 <div class="text-xs font-bold text-[#FAFAF9] truncate">
                                                     ${p1 ? `<span class="text-stone-500 font-mono mr-1">#${p1.seed || '-'}</span>${escapeHtml(p1.name)}` : '<span class="text-stone-600 italic">TBD</span>'}
@@ -71,7 +77,7 @@
                                             ${p1Won ? '<span class="text-amber-400 text-xs font-bold">✓</span>' : ''}
                                         </div>
 
-                                        <div data-action="advance-elim" data-round-idx="${rIdx}" data-match-idx="${mIdx}" data-slot="p2" class="flex justify-between items-center p-2.5 rounded-lg border transition-all ${p2 && p2.id ? 'cursor-pointer hover:border-[#F59E0B]/50' : 'opacity-50'} ${p2Won ? 'border-[#F59E0B] bg-[#F59E0B]/10' : 'border-stone-800/80 bg-[#1C1917]'}">
+                                        <div ${canClickP2 ? `data-action="advance-elim" data-round-idx="${rIdx}" data-match-idx="${mIdx}" data-slot="p2"` : ''} class="flex justify-between items-center p-2.5 rounded-lg border transition-all ${canClickP2 ? 'cursor-pointer hover:border-[#F59E0B]/50' : p2 && p2.id ? 'cursor-default' : 'opacity-50'} ${p2Won ? 'border-[#F59E0B] bg-[#F59E0B]/10' : 'border-stone-800/80 bg-[#1C1917]'}">
                                             <div class="truncate pr-2">
                                                 <div class="text-xs font-bold text-[#FAFAF9] truncate">
                                                     ${p2 ? `<span class="text-stone-500 font-mono mr-1">#${p2.seed || '-'}</span>${escapeHtml(p2.name)}` : '<span class="text-stone-600 italic">TBD</span>'}

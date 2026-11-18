@@ -6,7 +6,7 @@
     <title>Rift Tourneys • Riftbound TCG Tournament Manager</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="styles.css?v=7">
+    <link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body class="min-h-screen flex flex-col bg-[#12100E] text-[#FAFAF9] selection:bg-[#F59E0B] selection:text-[#12100E]">
 
@@ -112,6 +112,9 @@
                         <button type="button" data-action="reset-tournament" class="w-full py-2.5 bg-red-950/50 hover:bg-[#DC2626] text-red-200 hover:text-white text-sm font-semibold rounded-xl border border-[#DC2626]/50 transition-colors cursor-pointer">
                             Reset Entire Tournament
                         </button>
+                        <button type="button" data-action="open-ukraine-open" class="w-full py-2.5 bg-gradient-to-r from-[#F59E0B] to-amber-600 text-[#12100E] text-sm font-bold font-arcane rounded-xl shadow transition-all cursor-pointer flex items-center justify-center gap-2">
+                            <span>🏆</span> Ukraine Open
+                        </button>
                     </div>
                 </div>
 
@@ -134,7 +137,7 @@
                                     <th class="p-3.5 font-semibold text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="players-table-body" class="divide-y divide-stone-800/70 text-sm">
+                            <tbody id="players-table-body" class="text-sm">
                                 <tr>
                                     <td colspan="4" class="p-8 text-center text-stone-500 italic">No players registered yet. Add players or import a .txt list.</td>
                                 </tr>
@@ -176,10 +179,10 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2.5">
-                        <button type="button" data-action="toggle-force-panel" id="force-pair-btn" class="hidden px-3.5 py-2 bg-red-950/60 hover:bg-red-900/70 text-red-200 border border-[#DC2626]/50 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer">
+                        <button type="button" data-action="toggle-force-panel" id="force-pair-btn" class="hidden px-3.5 py-2 bg-red-950/60 hover:bg-red-900/70 text-red-200 border border-[#DC2626]/50 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
                             ⚡ Force Pairings
                         </button>
-                        <button type="button" data-action="repair-round" id="repair-round-btn" class="hidden px-3.5 py-2 bg-amber-950/60 hover:bg-amber-900/70 text-amber-300 border border-amber-500/40 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer">
+                        <button type="button" data-action="repair-round" id="repair-round-btn" class="hidden px-3.5 py-2 bg-amber-950/60 hover:bg-amber-900/70 text-amber-300 border border-amber-500/40 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
                             ↻ Re-Pair Round
                         </button>
                         <button type="button" data-action="next-round" id="next-round-btn" class="px-4 py-2 bg-[#F59E0B] text-[#12100E] font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
@@ -290,7 +293,7 @@
                                 <th class="p-3.5 font-semibold text-center" title="Opponent Game Win %">OGW%</th>
                             </tr>
                         </thead>
-                        <tbody id="standings-table-body" class="divide-y divide-stone-800/70">
+                        <tbody id="standings-table-body">
                             <tr>
                                 <td colspan="8" class="p-8 text-center text-stone-500 italic">No active Swiss tournament. Generate Round 1 Pairings to view standings.</td>
                             </tr>
@@ -309,12 +312,12 @@
                     </h2>
                     <div class="flex items-center gap-3">
                         <label for="cut-size-select" class="text-xs uppercase tracking-wider text-[#A8A29E] font-semibold">Cut Size:</label>
-                        <select id="cut-size-select" class="theme-input bg-[#141210] border border-stone-800 rounded-xl px-3 py-1.5 text-[#FAFAF9] text-sm focus:outline-none focus:border-[#F59E0B]">
+                        <select id="cut-size-select" class="theme-input bg-[#141210] border border-stone-800 rounded-xl px-3 py-1.5 text-[#FAFAF9] text-sm focus:outline-none focus:border-[#F59E0B] disabled:opacity-40 disabled:cursor-not-allowed">
                             <option value="4">Top 4</option>
                             <option value="8" selected>Top 8</option>
                             <option value="16">Top 16</option>
                         </select>
-                        <button type="button" data-action="build-bracket" class="px-4 py-1.5 bg-[#F59E0B] text-[#12100E] font-bold text-xs uppercase rounded-xl cursor-pointer transition-colors">
+                        <button type="button" data-action="build-bracket" class="px-4 py-1.5 bg-[#F59E0B] text-[#12100E] font-bold text-xs uppercase rounded-xl cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                             Build / Reset Bracket
                         </button>
                     </div>
@@ -370,7 +373,7 @@
                                     <th class="p-3.5 font-semibold text-center">Top Cut</th>
                                 </tr>
                             </thead>
-                            <tbody id="meta-table-body" class="divide-y divide-stone-800/70"></tbody>
+                            <tbody id="meta-table-body"></tbody>
                         </table>
                     </div>
                 </div>
@@ -386,7 +389,7 @@
                     </h2>
                     <div class="flex flex-wrap items-center gap-4">
                         <label class="flex items-center gap-2 text-xs text-[#A8A29E] cursor-pointer">
-                            <input type="checkbox" id="matrix-include-elim" checked class="accent-[#F59E0B] rounded cursor-pointer">
+                            <input type="checkbox" id="matrix-include-elim" checked class="theme-checkbox rounded cursor-pointer">
                             <span>Include Elimination Matches</span>
                         </label>
                         <div class="flex items-center gap-2">
@@ -435,19 +438,19 @@
     </footer>
 
     <!-- Application Scripts (file:// & GitHub Pages compatible, cache-busted) -->
-    <script defer src="js/data/legends.js?v=7"></script>
-    <script defer src="js/utils/dom.js?v=7"></script>
-    <script defer src="js/state/store.js?v=7"></script>
-    <script defer src="js/engine/standings.js?v=7"></script>
-    <script defer src="js/engine/swiss.js?v=7"></script>
-    <script defer src="js/engine/bracket.js?v=7"></script>
-    <script defer src="js/engine/analytics.js?v=7"></script>
-    <script defer src="js/ui/playersView.js?v=7"></script>
-    <script defer src="js/ui/swissView.js?v=7"></script>
-    <script defer src="js/ui/standingsView.js?v=7"></script>
-    <script defer src="js/ui/bracketView.js?v=7"></script>
-    <script defer src="js/ui/analyticsView.js?v=7"></script>
-    <script defer src="js/main.js?v=7"></script>
-    <script defer src="app.js?v=7"></script>
+    <script defer src="js/data/legends.js?v=8"></script>
+    <script defer src="js/utils/dom.js?v=8"></script>
+    <script defer src="js/state/store.js?v=8"></script>
+    <script defer src="js/engine/standings.js?v=8"></script>
+    <script defer src="js/engine/swiss.js?v=8"></script>
+    <script defer src="js/engine/bracket.js?v=8"></script>
+    <script defer src="js/engine/analytics.js?v=8"></script>
+    <script defer src="js/ui/playersView.js?v=8"></script>
+    <script defer src="js/ui/swissView.js?v=8"></script>
+    <script defer src="js/ui/standingsView.js?v=8"></script>
+    <script defer src="js/ui/bracketView.js?v=8"></script>
+    <script defer src="js/ui/analyticsView.js?v=8"></script>
+    <script defer src="js/main.js?v=8"></script>
+    <script defer src="app.js?v=8"></script>
 </body>
 </html>

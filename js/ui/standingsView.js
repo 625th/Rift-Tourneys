@@ -4,9 +4,10 @@
     function renderStandings() {
         const { formatDeckLabel } = Riftbound.legends;
         const { getSortedStandings } = Riftbound.standings;
-        const { getState } = Riftbound.store;
+        const { getState, isReadOnly } = Riftbound.store;
         const { escapeHtml } = Riftbound.dom;
         const state = getState();
+        const readOnly = isReadOnly();
 
         const tbody = document.getElementById('standings-table-body');
         const cutBtn = document.getElementById('generate-cut-btn');
@@ -18,14 +19,14 @@
             return;
         }
 
-        cutBtn.disabled = false;
+        cutBtn.disabled = readOnly;
         const standings = getSortedStandings(state.players, state.swissRounds);
 
         tbody.innerHTML = standings.map((s, idx) => {
             const deckLabel = formatDeckLabel(s.player.deck);
             const isUnassigned = deckLabel === 'Unassigned';
             return `
-                <tr class="hover:bg-stone-900/50 transition-colors ${s.player.active === false ? 'opacity-65' : ''}">
+                <tr class="border-b border-stone-800 last:border-b-0 hover:bg-stone-900/50 transition-colors ${s.player.active === false ? 'opacity-65' : ''}">
                     <td class="p-3.5 text-center font-mono font-bold text-amber-400">${idx + 1}</td>
                     <td class="p-3.5 font-semibold text-[#FAFAF9]">
                         <span>${escapeHtml(s.player.name)}</span>
