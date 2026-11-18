@@ -81,17 +81,8 @@
                         <h2 class="text-xl font-bold font-arcane text-[#38BDF8] mb-4 flex items-center gap-2">
                             <span>⚙️</span> Tournament Controls
                         </h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <button type="button" data-action="download-snapshot" class="py-2.5 px-3 bg-sky-950/40 hover:bg-sky-950/80 text-sky-300 text-xs font-semibold rounded-xl border border-sky-500/40 transition-colors cursor-pointer flex items-center justify-center gap-1.5">
-                                <span>💾</span> Save Snapshot
-                            </button>
-                            <input type="file" id="snapshot-file-input" accept=".json,application/json" class="hidden" disabled>
-                            <button type="button" disabled class="py-2.5 px-3 bg-slate-800 text-[#F8FAFC] text-xs font-semibold rounded-xl border border-slate-700 opacity-40 cursor-not-allowed flex items-center justify-center gap-1.5">
-                                <span>📂</span> Load Snapshot
-                            </button>
-                        </div>
-                        <button type="button" disabled class="w-full py-2.5 bg-red-950/50 text-red-200 text-sm font-semibold rounded-xl border border-[#DC2626]/50 opacity-40 cursor-not-allowed">
-                            Reset Entire Tournament
+                        <button type="button" data-action="download-snapshot" class="w-full py-2.5 px-3 bg-sky-950/40 hover:bg-sky-950/80 text-sky-300 text-xs font-semibold rounded-xl border border-sky-500/40 transition-colors cursor-pointer flex items-center justify-center gap-1.5">
+                            <span>💾</span> Save Snapshot
                         </button>
                         <button type="button" data-action="open-main-hub" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-[#F8FAFC] text-sm font-semibold font-arcane rounded-xl border border-slate-700 transition-all cursor-pointer flex items-center justify-center gap-2">
                             <span>←</span> Back to Main
@@ -349,7 +340,7 @@
     <script defer src="js/ui/playersView.js?v=12"></script>
     <script defer src="js/ui/swissView.js?v=12"></script>
     <script defer src="js/ui/standingsView.js?v=12"></script>
-    <script defer src="js/ui/bracketView.js?v=12"></script>
+    <script defer src="js/ui/bracketView.js?v=13"></script>
     <script defer src="js/ui/analyticsView.js?v=12"></script>
     <script defer src="js/main.js?v=12"></script>
     <script defer src="app.js?v=9"></script>

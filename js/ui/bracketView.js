@@ -28,7 +28,7 @@
         }
 
         if (!state.eliminationBracket || !state.eliminationBracket.rounds) {
-            container.innerHTML = '<p class="text-slate-500 italic text-center py-12">Complete Swiss rounds or click Build / Reset Bracket to populate playoffs.</p>';
+            container.innerHTML = `<p class="text-slate-500 italic text-center py-12">${readOnly ? 'Swiss is still in progress.' : 'Complete Swiss rounds or click Build / Reset Bracket to populate playoffs.'}</p>`;
             return;
         }
 
