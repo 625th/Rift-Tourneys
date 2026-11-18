@@ -108,39 +108,21 @@
                         <span id="player-badge" class="text-xs bg-[#0D1320] text-[#38BDF8] px-3 py-1 rounded-full border border-sky-500/30 font-medium">0 Registered</span>
                     </div>
 
-                    <div class="theme-recessed overflow-x-auto flex-grow rounded-xl border border-slate-800 bg-[#0D1320] max-h-[460px]">
+                    <div class="theme-recessed overflow-x-auto flex-grow rounded-xl border border-slate-800 bg-[#0D1320] max-h-[540px]">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-slate-900/90 text-[#94A3B8] text-xs uppercase tracking-wider border-b border-slate-800">
                                     <th class="p-3.5 font-semibold">#</th>
                                     <th class="p-3.5 font-semibold">Player</th>
                                     <th class="p-3.5 font-semibold">Legend</th>
-                                    <th class="p-3.5 font-semibold text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="players-table-body" class="text-sm">
                                 <tr>
-                                    <td colspan="4" class="p-8 text-center text-slate-500 italic">Loading Ukraine Open tournament roster...</td>
+                                    <td colspan="3" class="p-8 text-center text-slate-500 italic">Loading Ukraine Open tournament roster...</td>
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-
-                    <div class="mt-6 pt-4 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                        <div class="w-full sm:w-64">
-                            <label for="custom-rounds-input" class="block text-xs uppercase tracking-wider text-[#94A3B8] font-semibold mb-1">
-                                Number of Swiss Rounds
-                            </label>
-                            <input type="number" id="custom-rounds-input" min="1" max="15" disabled placeholder="Auto (Recommended)"
-                                class="theme-input w-full bg-[#0D1320] border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-[#F8FAFC] placeholder-slate-500 opacity-50 cursor-not-allowed">
-                            <p id="recommended-rounds-hint" class="text-[11px] text-[#94A3B8] mt-1">
-                                Leave empty for automatic Swiss calculation.
-                            </p>
-                        </div>
-
-                        <button type="button" id="start-swiss-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-[#38BDF8] to-sky-500 text-[#082F49] font-bold font-arcane rounded-xl shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed" disabled>
-                            Generate Round 1 Pairings ➔
-                        </button>
                     </div>
                 </div>
             </div>
@@ -149,7 +131,7 @@
         <!-- ================= TAB 2: SWISS PAIRINGS ================= -->
         <section id="tab-swiss" class="space-y-6">
             <div class="theme-card bg-[#111827] border border-slate-800 p-5 sm:p-6 rounded-2xl space-y-4">
-                <!-- Row 1: Title, Round & Progress Badges + Primary Actions -->
+                <!-- Row 1: Title, Round & Progress Badges -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div class="flex flex-wrap items-center gap-2.5">
                         <h2 class="text-xl font-bold font-arcane text-[#38BDF8] flex items-center gap-2">
@@ -157,18 +139,6 @@
                         </h2>
                         <span id="swiss-round-counter-badge" class="hidden text-xs font-mono px-2.5 py-0.5 rounded-full bg-[#0D1320] text-[#38BDF8] border border-sky-500/30"></span>
                         <span id="swiss-progress-badge" class="hidden text-xs font-mono px-2.5 py-0.5 rounded-full bg-slate-800 text-[#94A3B8] border border-slate-700"></span>
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-2.5">
-                        <button type="button" id="force-pair-btn" disabled class="hidden px-3.5 py-2 bg-red-950/60 text-red-200 border border-[#DC2626]/50 font-bold text-xs uppercase tracking-wider rounded-xl opacity-40 cursor-not-allowed">
-                            ⚡ Force Pairings
-                        </button>
-                        <button type="button" id="repair-round-btn" disabled class="hidden px-3.5 py-2 bg-sky-950/60 text-sky-300 border border-sky-500/40 font-bold text-xs uppercase tracking-wider rounded-xl opacity-40 cursor-not-allowed">
-                            ↻ Re-Pair Round
-                        </button>
-                        <button type="button" id="next-round-btn" disabled class="px-4 py-2 bg-[#38BDF8] text-[#082F49] font-bold text-xs uppercase tracking-wider rounded-xl opacity-40 cursor-not-allowed">
-                            Next Round ➔
-                        </button>
                     </div>
                 </div>
 
@@ -211,9 +181,6 @@
                     <h2 class="text-xl font-bold font-arcane text-[#38BDF8] flex items-center gap-2">
                         <span>🏆</span> Standings &amp; Tiebreakers
                     </h2>
-                    <button type="button" id="generate-cut-btn" disabled class="px-5 py-2.5 bg-gradient-to-r from-[#38BDF8] to-sky-500 text-[#082F49] font-bold font-arcane text-sm rounded-xl shadow-lg opacity-40 cursor-not-allowed">
-                        Generate Top Cut Bracket ➔
-                    </button>
                 </div>
 
                 <div class="theme-recessed overflow-x-auto rounded-xl border border-slate-800 bg-[#0D1320]">
@@ -254,9 +221,6 @@
                             <option value="8" selected>Top 8</option>
                             <option value="16">Top 16</option>
                         </select>
-                        <button type="button" disabled class="px-4 py-1.5 bg-[#38BDF8] text-[#082F49] font-bold text-xs uppercase rounded-xl opacity-40 cursor-not-allowed">
-                            Build / Reset Bracket
-                        </button>
                     </div>
                 </div>
 
@@ -382,12 +346,12 @@
     <script defer src="js/engine/swiss.js?v=9"></script>
     <script defer src="js/engine/bracket.js?v=9"></script>
     <script defer src="js/engine/analytics.js?v=9"></script>
-    <script defer src="js/ui/playersView.js?v=9"></script>
-    <script defer src="js/ui/swissView.js?v=9"></script>
-    <script defer src="js/ui/standingsView.js?v=9"></script>
-    <script defer src="js/ui/bracketView.js?v=9"></script>
-    <script defer src="js/ui/analyticsView.js?v=9"></script>
-    <script defer src="js/main.js?v=11"></script>
+    <script defer src="js/ui/playersView.js?v=12"></script>
+    <script defer src="js/ui/swissView.js?v=12"></script>
+    <script defer src="js/ui/standingsView.js?v=12"></script>
+    <script defer src="js/ui/bracketView.js?v=12"></script>
+    <script defer src="js/ui/analyticsView.js?v=12"></script>
+    <script defer src="js/main.js?v=12"></script>
     <script defer src="app.js?v=9"></script>
 </body>
 </html>

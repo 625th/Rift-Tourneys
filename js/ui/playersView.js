@@ -45,7 +45,7 @@
     }
 
     function renderPlayers() {
-        const { RIFTBOUND_LEGENDS } = Riftbound.legends;
+        const { RIFTBOUND_LEGENDS, formatDeckLabel } = Riftbound.legends;
         const { getState, isReadOnly } = Riftbound.store;
         const { escapeHtml } = Riftbound.dom;
         const state = getState();
@@ -55,7 +55,7 @@
         const countBadge = document.getElementById('player-count');
         const playerBadge = document.getElementById('player-badge');
         const startBtn = document.getElementById('start-swiss-btn');
-        if (!tbody || !countBadge || !playerBadge || !startBtn) return;
+        if (!tbody || !countBadge || !playerBadge) return;
 
         const activeCount = state.players.filter(p => p.active !== false).length;
         const swissStarted = state.swissRounds.length > 0;
@@ -64,17 +64,21 @@
         playerBadge.textContent = activeCount < state.players.length
             ? `${activeCount} Active / ${state.players.length} Total`
             : `${state.players.length} Registered`;
-        startBtn.disabled = readOnly || activeCount < 2;
+        if (startBtn) {
+            startBtn.disabled = readOnly || activeCount < 2;
+        }
 
         updateRoundsInputUI();
 
         if (state.players.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500 italic">${readOnly ? 'Loading tournament roster...' : 'No players registered yet. Add players or import a .txt list.'}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${readOnly ? 3 : 4}" class="p-8 text-center text-slate-500 italic">${readOnly ? 'Loading tournament roster...' : 'No players registered yet. Add players or import a .txt list.'}</td></tr>`;
             return;
         }
 
         tbody.innerHTML = state.players.map((p, idx) => {
             const isActive = p.active !== false;
+            const deckLabel = formatDeckLabel(p.deck);
+            const isUnassigned = deckLabel === 'Unassigned';
             return `
             <tr class="border-b border-slate-800 last:border-b-0 hover:bg-slate-900/50 transition-colors ${!isActive ? 'opacity-60' : ''}">
                 <td class="p-3.5 text-slate-500 font-mono">${idx + 1}</td>
@@ -83,20 +87,25 @@
                     ${!isActive ? '<span class="ml-2 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-red-950/70 text-red-300 border border-[#DC2626]/50">Dropped</span>' : ''}
                 </td>
                 <td class="p-3.5">
-                    <select ${readOnly ? 'disabled' : ''} data-action="update-deck" data-player-id="${escapeHtml(p.id)}"
-                        class="theme-input w-full max-w-xs bg-[#111827] border ${p.deck ? 'border-slate-700 text-sky-400' : 'border-sky-700/50 text-[#94A3B8] italic'} rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:border-[#38BDF8] transition-colors ${readOnly ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}">
-                        <option value="" ${!p.deck ? 'selected' : ''}>— Unassigned —</option>
-                        ${RIFTBOUND_LEGENDS.map(legend => `
-                            <option value="${escapeHtml(legend)}" ${p.deck === legend ? 'selected' : ''}>${escapeHtml(legend)}</option>
-                        `).join('')}
-                    </select>
-                </td>
-                <td class="p-3.5 text-right">
-                    ${swissStarted
-                        ? `<button type="button" ${readOnly ? 'disabled' : ''} data-action="toggle-player-active" data-player-id="${escapeHtml(p.id)}" class="text-xs px-2.5 py-1 rounded-lg border transition-colors ${readOnly ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${isActive ? 'text-sky-300 hover:text-sky-200 bg-sky-950/40 border-sky-500/40' : 'text-emerald-300 hover:text-emerald-200 bg-emerald-950/40 border-emerald-700/50'}">${isActive ? 'Drop' : 'Reactivate'}</button>`
-                        : `<button type="button" ${readOnly ? 'disabled' : ''} data-action="remove-player" data-player-id="${escapeHtml(p.id)}" class="text-red-300 hover:text-red-200 text-xs px-2.5 py-1 rounded-lg bg-red-950/40 border border-[#DC2626]/40 transition-colors ${readOnly ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}">Remove</button>`
+                    ${readOnly
+                        ? `<span class="text-xs font-medium ${isUnassigned ? 'text-slate-500 italic' : 'text-sky-400'}">${escapeHtml(deckLabel)}</span>`
+                        : `<select data-action="update-deck" data-player-id="${escapeHtml(p.id)}"
+                            class="theme-input w-full max-w-xs bg-[#111827] border ${p.deck ? 'border-slate-700 text-sky-400' : 'border-sky-700/50 text-[#94A3B8] italic'} rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:border-[#38BDF8] transition-colors cursor-pointer">
+                            <option value="" ${!p.deck ? 'selected' : ''}>— Unassigned —</option>
+                            ${RIFTBOUND_LEGENDS.map(legend => `
+                                <option value="${escapeHtml(legend)}" ${p.deck === legend ? 'selected' : ''}>${escapeHtml(legend)}</option>
+                            `).join('')}
+                        </select>`
                     }
                 </td>
+                ${readOnly ? '' : `
+                <td class="p-3.5 text-right">
+                    ${swissStarted
+                        ? `<button type="button" data-action="toggle-player-active" data-player-id="${escapeHtml(p.id)}" class="text-xs px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${isActive ? 'text-sky-300 hover:text-sky-200 bg-sky-950/40 border-sky-500/40' : 'text-emerald-300 hover:text-emerald-200 bg-emerald-950/40 border-emerald-700/50'}">${isActive ? 'Drop' : 'Reactivate'}</button>`
+                        : `<button type="button" data-action="remove-player" data-player-id="${escapeHtml(p.id)}" class="text-red-300 hover:text-red-200 text-xs px-2.5 py-1 rounded-lg bg-red-950/40 border border-[#DC2626]/40 transition-colors cursor-pointer">Remove</button>`
+                    }
+                </td>
+                `}
             </tr>
             `;
         }).join('');

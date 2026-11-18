@@ -11,15 +11,15 @@
 
         const tbody = document.getElementById('standings-table-body');
         const cutBtn = document.getElementById('generate-cut-btn');
-        if (!tbody || !cutBtn) return;
+        if (!tbody) return;
 
         if (state.swissRounds.length === 0) {
-            cutBtn.disabled = true;
+            if (cutBtn) cutBtn.disabled = true;
             tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-500 italic">No active Swiss tournament. Generate Round 1 Pairings on the Players tab to view standings.</td></tr>';
             return;
         }
 
-        cutBtn.disabled = readOnly;
+        if (cutBtn) cutBtn.disabled = readOnly;
         const standings = getSortedStandings(state.players, state.swissRounds);
 
         tbody.innerHTML = standings.map((s, idx) => {

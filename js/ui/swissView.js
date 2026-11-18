@@ -259,24 +259,26 @@
         const searchInput = document.getElementById('swiss-search-input');
         const filterSelect = document.getElementById('swiss-filter-select');
 
-        if (!roundTabsContainer || !bannersContainer || !container || !nextRoundBtn || !repairRoundBtn || !forcePairBtn) return;
+        if (!roundTabsContainer || !bannersContainer || !container) return;
 
         if (state.swissRounds.length === 0) {
             roundTabsContainer.innerHTML = '';
             bannersContainer.innerHTML = '';
-            repairRoundBtn.classList.add('hidden');
-            forcePairBtn.classList.add('hidden');
+            if (repairRoundBtn) repairRoundBtn.classList.add('hidden');
+            if (forcePairBtn) forcePairBtn.classList.add('hidden');
             if (controlsRow) controlsRow.classList.add('hidden');
             if (counterBadge) counterBadge.classList.add('hidden');
             if (progressBadge) progressBadge.classList.add('hidden');
             if (forcePanel) forcePanel.classList.add('hidden');
             container.innerHTML = `
                 <div class="theme-card bg-[#111827] border border-slate-800 rounded-2xl p-12 text-center text-slate-500">
-                    <p class="mb-4">No Swiss rounds generated yet.</p>
-                    <button type="button" data-action="switch-tab" data-tab="players" class="px-5 py-2.5 bg-[#38BDF8] text-[#082F49] font-bold rounded-xl cursor-pointer">Go to Players</button>
+                    <p class="mb-4">${readOnly ? 'Loading Ukraine Open Swiss pairings...' : 'No Swiss rounds generated yet.'}</p>
+                    ${readOnly ? '' : '<button type="button" data-action="switch-tab" data-tab="players" class="px-5 py-2.5 bg-[#38BDF8] text-[#082F49] font-bold rounded-xl cursor-pointer">Go to Players</button>'}
                 </div>`;
-            nextRoundBtn.disabled = true;
-            nextRoundBtn.textContent = 'Next Round ➔';
+            if (nextRoundBtn) {
+                nextRoundBtn.disabled = true;
+                nextRoundBtn.textContent = 'Next Round ➔';
+            }
             return;
         }
 
@@ -305,23 +307,20 @@
         }
 
         if (!locked && !readOnly) {
-            repairRoundBtn.classList.remove('hidden');
-            repairRoundBtn.disabled = false;
-            repairRoundBtn.textContent = `↻ Re-Pair Round ${activeRound.round}`;
-            forcePairBtn.classList.remove('hidden');
-            forcePairBtn.disabled = false;
+            if (repairRoundBtn) {
+                repairRoundBtn.classList.remove('hidden');
+                repairRoundBtn.disabled = false;
+                repairRoundBtn.textContent = `↻ Re-Pair Round ${activeRound.round}`;
+            }
+            if (forcePairBtn) {
+                forcePairBtn.classList.remove('hidden');
+                forcePairBtn.disabled = false;
+            }
             populateForcePairSelects();
             renderPinnedPairsList();
-        } else if (readOnly) {
-            repairRoundBtn.classList.remove('hidden');
-            repairRoundBtn.disabled = true;
-            repairRoundBtn.textContent = `↻ Re-Pair Round ${activeRound.round}`;
-            forcePairBtn.classList.remove('hidden');
-            forcePairBtn.disabled = true;
-            if (forcePanel) forcePanel.classList.add('hidden');
         } else {
-            repairRoundBtn.classList.add('hidden');
-            forcePairBtn.classList.add('hidden');
+            if (repairRoundBtn) repairRoundBtn.classList.add('hidden');
+            if (forcePairBtn) forcePairBtn.classList.add('hidden');
             if (forcePanel) forcePanel.classList.add('hidden');
         }
 
@@ -388,10 +387,12 @@
             `;
         }
 
-        nextRoundBtn.disabled = readOnly || !allComplete;
-        nextRoundBtn.textContent = isFinalSwissRound
-            ? 'Finish Swiss (Standings) ➔'
-            : `Next Round (${state.swissRounds.length + 1}/${maxRounds}) ➔`;
+        if (nextRoundBtn) {
+            nextRoundBtn.disabled = readOnly || !allComplete;
+            nextRoundBtn.textContent = isFinalSwissRound
+                ? 'Finish Swiss (Standings) ➔'
+                : `Next Round (${state.swissRounds.length + 1}/${maxRounds}) ➔`;
+        }
     }
 
     Riftbound.swissView = {
