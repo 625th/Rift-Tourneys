@@ -6,7 +6,7 @@
         const { escapeHtml } = Riftbound.dom;
         const label = formatDeckLabel(deck);
         const isUnassigned = label === 'Unassigned';
-        return `<div class="text-[11px] truncate ${isUnassigned ? 'text-stone-500 italic' : 'text-amber-400/80'}">${escapeHtml(label)}</div>`;
+        return `<div class="text-[11px] truncate ${isUnassigned ? 'text-slate-500 italic' : 'text-sky-400/80'}">${escapeHtml(label)}</div>`;
     }
 
     function renderEliminationBracket() {
@@ -28,7 +28,7 @@
         }
 
         if (!state.eliminationBracket || !state.eliminationBracket.rounds) {
-            container.innerHTML = '<p class="text-stone-500 italic text-center py-12">Complete Swiss rounds or click Build / Reset Bracket to populate playoffs.</p>';
+            container.innerHTML = '<p class="text-slate-500 italic text-center py-12">Complete Swiss rounds or click Build / Reset Bracket to populate playoffs.</p>';
             return;
         }
 
@@ -44,16 +44,16 @@
 
         container.innerHTML = `
             ${champion ? `
-                <div class="mb-8 p-6 rounded-2xl bg-gradient-to-r from-amber-950/60 via-red-950/40 to-amber-950/60 border border-[#F59E0B]/50 text-center shadow-xl">
-                    <div class="text-xs uppercase tracking-widest text-amber-400 font-bold mb-1">👑 Riftbound Tournament Champion</div>
-                    <div class="text-2xl font-black font-arcane text-[#FAFAF9]">${escapeHtml(champion.name)}</div>
-                    <div class="text-sm text-amber-400/90 mt-0.5">${escapeHtml(formatDeckLabel(champion.deck))}</div>
+                <div class="mb-8 p-6 rounded-2xl bg-gradient-to-r from-amber-950/60 via-red-950/40 to-amber-950/60 border border-[#38BDF8]/50 text-center shadow-xl">
+                    <div class="text-xs uppercase tracking-widest text-sky-400 font-bold mb-1">👑 Riftbound Tournament Champion</div>
+                    <div class="text-2xl font-black font-arcane text-[#F8FAFC]">${escapeHtml(champion.name)}</div>
+                    <div class="text-sm text-sky-400/90 mt-0.5">${escapeHtml(formatDeckLabel(champion.deck))}</div>
                 </div>
             ` : ''}
             <div class="flex flex-col lg:flex-row gap-8 justify-start items-stretch min-w-max px-2">
                 ${rounds.map((rMatches, rIdx) => `
                     <div class="flex flex-col justify-around space-y-6 w-72">
-                        <h3 class="text-xs uppercase tracking-wider font-bold text-amber-400 text-center border-b border-stone-800 pb-2">
+                        <h3 class="text-xs uppercase tracking-wider font-bold text-sky-400 text-center border-b border-slate-800 pb-2">
                             ${roundNames[rIdx] || `Round ${rIdx + 1}`}
                         </h3>
                         <div class="flex flex-col justify-around flex-grow space-y-4">
@@ -66,25 +66,25 @@
                                 const canClickP2 = !readOnly && p2 && p2.id;
 
                                 return `
-                                    <div class="bg-[#141210] border border-stone-800 rounded-xl p-3.5 shadow-md space-y-2">
-                                        <div ${canClickP1 ? `data-action="advance-elim" data-round-idx="${rIdx}" data-match-idx="${mIdx}" data-slot="p1"` : ''} class="flex justify-between items-center p-2.5 rounded-lg border transition-all ${canClickP1 ? 'cursor-pointer hover:border-[#F59E0B]/50' : p1 && p1.id ? 'cursor-default' : 'opacity-50'} ${p1Won ? 'border-[#F59E0B] bg-[#F59E0B]/10' : 'border-stone-800/80 bg-[#1C1917]'}">
+                                    <div class="bg-[#0D1320] border border-slate-800 rounded-xl p-3.5 shadow-md space-y-2">
+                                        <div ${canClickP1 ? `data-action="advance-elim" data-round-idx="${rIdx}" data-match-idx="${mIdx}" data-slot="p1"` : ''} class="flex justify-between items-center p-2.5 rounded-lg border transition-all ${canClickP1 ? 'cursor-pointer hover:border-[#38BDF8]/50' : p1 && p1.id ? 'cursor-default' : 'opacity-50'} ${p1Won ? 'border-[#38BDF8] bg-[#38BDF8]/10' : 'border-slate-800/80 bg-[#111827]'}">
                                             <div class="truncate pr-2">
-                                                <div class="text-xs font-bold text-[#FAFAF9] truncate">
-                                                    ${p1 ? `<span class="text-stone-500 font-mono mr-1">#${p1.seed || '-'}</span>${escapeHtml(p1.name)}` : '<span class="text-stone-600 italic">TBD</span>'}
+                                                <div class="text-xs font-bold text-[#F8FAFC] truncate">
+                                                    ${p1 ? `<span class="text-slate-500 font-mono mr-1">#${p1.seed || '-'}</span>${escapeHtml(p1.name)}` : '<span class="text-slate-600 italic">TBD</span>'}
                                                 </div>
                                                 ${p1 && p1.id ? renderBracketDeckLabel(p1.deck) : ''}
                                             </div>
-                                            ${p1Won ? '<span class="text-amber-400 text-xs font-bold">✓</span>' : ''}
+                                            ${p1Won ? '<span class="text-sky-400 text-xs font-bold">✓</span>' : ''}
                                         </div>
 
-                                        <div ${canClickP2 ? `data-action="advance-elim" data-round-idx="${rIdx}" data-match-idx="${mIdx}" data-slot="p2"` : ''} class="flex justify-between items-center p-2.5 rounded-lg border transition-all ${canClickP2 ? 'cursor-pointer hover:border-[#F59E0B]/50' : p2 && p2.id ? 'cursor-default' : 'opacity-50'} ${p2Won ? 'border-[#F59E0B] bg-[#F59E0B]/10' : 'border-stone-800/80 bg-[#1C1917]'}">
+                                        <div ${canClickP2 ? `data-action="advance-elim" data-round-idx="${rIdx}" data-match-idx="${mIdx}" data-slot="p2"` : ''} class="flex justify-between items-center p-2.5 rounded-lg border transition-all ${canClickP2 ? 'cursor-pointer hover:border-[#38BDF8]/50' : p2 && p2.id ? 'cursor-default' : 'opacity-50'} ${p2Won ? 'border-[#38BDF8] bg-[#38BDF8]/10' : 'border-slate-800/80 bg-[#111827]'}">
                                             <div class="truncate pr-2">
-                                                <div class="text-xs font-bold text-[#FAFAF9] truncate">
-                                                    ${p2 ? `<span class="text-stone-500 font-mono mr-1">#${p2.seed || '-'}</span>${escapeHtml(p2.name)}` : '<span class="text-stone-600 italic">TBD</span>'}
+                                                <div class="text-xs font-bold text-[#F8FAFC] truncate">
+                                                    ${p2 ? `<span class="text-slate-500 font-mono mr-1">#${p2.seed || '-'}</span>${escapeHtml(p2.name)}` : '<span class="text-slate-600 italic">TBD</span>'}
                                                 </div>
                                                 ${p2 && p2.id ? renderBracketDeckLabel(p2.deck) : ''}
                                             </div>
-                                            ${p2Won ? '<span class="text-amber-400 text-xs font-bold">✓</span>' : ''}
+                                            ${p2Won ? '<span class="text-sky-400 text-xs font-bold">✓</span>' : ''}
                                         </div>
                                     </div>
                                 `;

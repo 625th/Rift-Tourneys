@@ -39,7 +39,7 @@
             if (state.customMaxRounds) {
                 hint.innerHTML = `Custom: <strong>${state.customMaxRounds} round(s)</strong> (Recommended for ${count} players: ${recommended})`;
             } else {
-                hint.innerHTML = `Auto-selected: <strong class="text-amber-400">${recommended} Swiss rounds</strong> for ${count} players.`;
+                hint.innerHTML = `Auto-selected: <strong class="text-sky-400">${recommended} Swiss rounds</strong> for ${count} players.`;
             }
         }
     }
@@ -69,22 +69,22 @@
         updateRoundsInputUI();
 
         if (state.players.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-stone-500 italic">${readOnly ? 'Loading tournament roster...' : 'No players registered yet. Add players or import a .txt list.'}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500 italic">${readOnly ? 'Loading tournament roster...' : 'No players registered yet. Add players or import a .txt list.'}</td></tr>`;
             return;
         }
 
         tbody.innerHTML = state.players.map((p, idx) => {
             const isActive = p.active !== false;
             return `
-            <tr class="border-b border-stone-800 last:border-b-0 hover:bg-stone-900/50 transition-colors ${!isActive ? 'opacity-60' : ''}">
-                <td class="p-3.5 text-stone-500 font-mono">${idx + 1}</td>
-                <td class="p-3.5 font-semibold text-[#FAFAF9]">
+            <tr class="border-b border-slate-800 last:border-b-0 hover:bg-slate-900/50 transition-colors ${!isActive ? 'opacity-60' : ''}">
+                <td class="p-3.5 text-slate-500 font-mono">${idx + 1}</td>
+                <td class="p-3.5 font-semibold text-[#F8FAFC]">
                     <span>${escapeHtml(p.name)}</span>
                     ${!isActive ? '<span class="ml-2 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-red-950/70 text-red-300 border border-[#DC2626]/50">Dropped</span>' : ''}
                 </td>
                 <td class="p-3.5">
                     <select ${readOnly ? 'disabled' : ''} data-action="update-deck" data-player-id="${escapeHtml(p.id)}"
-                        class="theme-input w-full max-w-xs bg-[#1C1917] border ${p.deck ? 'border-stone-700 text-amber-400' : 'border-amber-700/50 text-[#A8A29E] italic'} rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:border-[#F59E0B] transition-colors ${readOnly ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}">
+                        class="theme-input w-full max-w-xs bg-[#111827] border ${p.deck ? 'border-slate-700 text-sky-400' : 'border-sky-700/50 text-[#94A3B8] italic'} rounded-lg px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:border-[#38BDF8] transition-colors ${readOnly ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}">
                         <option value="" ${!p.deck ? 'selected' : ''}>— Unassigned —</option>
                         ${RIFTBOUND_LEGENDS.map(legend => `
                             <option value="${escapeHtml(legend)}" ${p.deck === legend ? 'selected' : ''}>${escapeHtml(legend)}</option>
@@ -93,7 +93,7 @@
                 </td>
                 <td class="p-3.5 text-right">
                     ${swissStarted
-                        ? `<button type="button" ${readOnly ? 'disabled' : ''} data-action="toggle-player-active" data-player-id="${escapeHtml(p.id)}" class="text-xs px-2.5 py-1 rounded-lg border transition-colors ${readOnly ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${isActive ? 'text-amber-300 hover:text-amber-200 bg-amber-950/40 border-amber-500/40' : 'text-emerald-300 hover:text-emerald-200 bg-emerald-950/40 border-emerald-700/50'}">${isActive ? 'Drop' : 'Reactivate'}</button>`
+                        ? `<button type="button" ${readOnly ? 'disabled' : ''} data-action="toggle-player-active" data-player-id="${escapeHtml(p.id)}" class="text-xs px-2.5 py-1 rounded-lg border transition-colors ${readOnly ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${isActive ? 'text-sky-300 hover:text-sky-200 bg-sky-950/40 border-sky-500/40' : 'text-emerald-300 hover:text-emerald-200 bg-emerald-950/40 border-emerald-700/50'}">${isActive ? 'Drop' : 'Reactivate'}</button>`
                         : `<button type="button" ${readOnly ? 'disabled' : ''} data-action="remove-player" data-player-id="${escapeHtml(p.id)}" class="text-red-300 hover:text-red-200 text-xs px-2.5 py-1 rounded-lg bg-red-950/40 border border-[#DC2626]/40 transition-colors ${readOnly ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}">Remove</button>`
                     }
                 </td>

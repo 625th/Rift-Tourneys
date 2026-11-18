@@ -22,12 +22,12 @@
 
         if (totalPlayers === 0) {
             kpiContainer.innerHTML = `
-                <div class="theme-card col-span-full bg-[#1C1917] border border-stone-800 rounded-2xl p-8 text-center text-stone-500 italic">
+                <div class="theme-card col-span-full bg-[#111827] border border-slate-800 rounded-2xl p-8 text-center text-slate-500 italic">
                     No Players registered yet. Add players on the Players tab to generate the Meta Breakdown.
                 </div>
             `;
-            barsContainer.innerHTML = '<p class="text-stone-500 italic text-center py-8 text-sm">No Legend representation data.</p>';
-            tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-stone-500 italic">Register players to view Legend analytics.</td></tr>';
+            barsContainer.innerHTML = '<p class="text-slate-500 italic text-center py-8 text-sm">No Legend representation data.</p>';
+            tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-500 italic">Register players to view Legend analytics.</td></tr>';
             return;
         }
 
@@ -39,27 +39,27 @@
         const bestPerforming = byWinRate[0] || null;
 
         kpiContainer.innerHTML = `
-            <div class="theme-card bg-[#1C1917] border border-stone-800 rounded-2xl p-5">
-                <div class="text-xs uppercase tracking-wider text-[#A8A29E] font-semibold">Total Players</div>
-                <div class="text-3xl font-black font-arcane text-[#FAFAF9] mt-1">${totalPlayers}</div>
-                <div class="text-xs text-stone-500 mt-1">${state.swissRounds.length} / ${getEffectiveMaxRounds()} Swiss Round(s)</div>
+            <div class="theme-card bg-[#111827] border border-slate-800 rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-[#94A3B8] font-semibold">Total Players</div>
+                <div class="text-3xl font-black font-arcane text-[#F8FAFC] mt-1">${totalPlayers}</div>
+                <div class="text-xs text-slate-500 mt-1">${state.swissRounds.length} / ${getEffectiveMaxRounds()} Swiss Round(s)</div>
             </div>
-            <div class="theme-card bg-[#1C1917] border border-stone-800 rounded-2xl p-5">
-                <div class="text-xs uppercase tracking-wider text-[#A8A29E] font-semibold">Unique Legends</div>
-                <div class="text-3xl font-black font-arcane text-amber-400 mt-1">${statsList.length} <span class="text-sm font-normal text-stone-500">/ 58</span></div>
-                <div class="text-xs text-stone-500 mt-1">Diversity Index: ${((statsList.length / totalPlayers) * 100).toFixed(0)}%</div>
+            <div class="theme-card bg-[#111827] border border-slate-800 rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-[#94A3B8] font-semibold">Unique Legends</div>
+                <div class="text-3xl font-black font-arcane text-sky-400 mt-1">${statsList.length} <span class="text-sm font-normal text-slate-500">/ 58</span></div>
+                <div class="text-xs text-slate-500 mt-1">Diversity Index: ${((statsList.length / totalPlayers) * 100).toFixed(0)}%</div>
             </div>
-            <div class="theme-card bg-[#1C1917] border border-stone-800 rounded-2xl p-5">
-                <div class="text-xs uppercase tracking-wider text-[#A8A29E] font-semibold">Most Played Legend</div>
-                <div class="text-base font-bold text-amber-300 mt-1 truncate" title="${escapeHtml(mostPopular.legend)}">${escapeHtml(mostPopular.legend)}</div>
-                <div class="text-xs text-[#A8A29E] mt-1 font-mono">${mostPopular.pilots} Pilot(s) • ${mostPopular.metaShare.toFixed(1)}% of Field</div>
+            <div class="theme-card bg-[#111827] border border-slate-800 rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-[#94A3B8] font-semibold">Most Played Legend</div>
+                <div class="text-base font-bold text-sky-300 mt-1 truncate" title="${escapeHtml(mostPopular.legend)}">${escapeHtml(mostPopular.legend)}</div>
+                <div class="text-xs text-[#94A3B8] mt-1 font-mono">${mostPopular.pilots} Pilot(s) • ${mostPopular.metaShare.toFixed(1)}% of Field</div>
             </div>
-            <div class="theme-card bg-[#1C1917] border border-stone-800 rounded-2xl p-5">
-                <div class="text-xs uppercase tracking-wider text-[#A8A29E] font-semibold">Highest Match Win %</div>
-                <div class="text-base font-bold text-amber-400 mt-1 truncate" title="${bestPerforming ? escapeHtml(bestPerforming.legend) : 'N/A'}">
+            <div class="theme-card bg-[#111827] border border-slate-800 rounded-2xl p-5">
+                <div class="text-xs uppercase tracking-wider text-[#94A3B8] font-semibold">Highest Match Win %</div>
+                <div class="text-base font-bold text-sky-400 mt-1 truncate" title="${bestPerforming ? escapeHtml(bestPerforming.legend) : 'N/A'}">
                     ${bestPerforming ? escapeHtml(bestPerforming.legend) : 'Awaiting Results'}
                 </div>
-                <div class="text-xs text-[#A8A29E] mt-1 font-mono">
+                <div class="text-xs text-[#94A3B8] mt-1 font-mono">
                     ${bestPerforming ? `${bestPerforming.matchWinRate.toFixed(1)}% (${bestPerforming.matchWins}-${bestPerforming.matchLosses}-${bestPerforming.matchDraws})` : 'Complete Swiss matches'}
                 </div>
             </div>
@@ -68,13 +68,13 @@
         barsContainer.innerHTML = byPopularity.map(item => `
             <div class="space-y-1.5">
                 <div class="flex justify-between items-center text-xs">
-                    <span class="font-semibold text-[#FAFAF9] truncate pr-2">${escapeHtml(item.legend)}</span>
-                    <span class="font-mono text-amber-400 shrink-0">${item.pilots} (${item.metaShare.toFixed(1)}%)</span>
+                    <span class="font-semibold text-[#F8FAFC] truncate pr-2">${escapeHtml(item.legend)}</span>
+                    <span class="font-mono text-sky-400 shrink-0">${item.pilots} (${item.metaShare.toFixed(1)}%)</span>
                 </div>
-                <div class="w-full h-2.5 bg-[#141210] rounded-full overflow-hidden border border-stone-800">
+                <div class="w-full h-2.5 bg-[#0D1320] rounded-full overflow-hidden border border-slate-800">
                     <div class="theme-progress-bar h-full rounded-full transition-all duration-300" style="width: ${Math.max(item.metaShare, 3)}%"></div>
                 </div>
-                <div class="text-[11px] text-stone-500 truncate">Players: ${item.pilotNames.map(n => escapeHtml(n)).join(', ')}</div>
+                <div class="text-[11px] text-slate-500 truncate">Players: ${item.pilotNames.map(n => escapeHtml(n)).join(', ')}</div>
             </div>
         `).join('');
 
@@ -98,32 +98,32 @@
 
         tbody.innerHTML = sortedTable.map(item => {
             const mwBadgeColor = item.matchesPlayed === 0
-                ? 'text-stone-500'
+                ? 'text-slate-500'
                 : item.matchWinRate >= 60
-                ? 'text-amber-400 font-bold'
+                ? 'text-sky-400 font-bold'
                 : item.matchWinRate < 40
                 ? 'text-red-400'
-                : 'text-[#FAFAF9]';
+                : 'text-[#F8FAFC]';
 
             return `
-                <tr class="border-b border-stone-800 last:border-b-0 hover:bg-stone-900/50 transition-colors">
+                <tr class="border-b border-slate-800 last:border-b-0 hover:bg-slate-900/50 transition-colors">
                     <td class="p-3.5">
-                        <div class="font-semibold text-amber-400/90">${escapeHtml(item.legend)}</div>
-                        <div class="text-[11px] text-stone-500 truncate max-w-xs">${item.pilotNames.map(n => escapeHtml(n)).join(', ')}</div>
+                        <div class="font-semibold text-sky-400/90">${escapeHtml(item.legend)}</div>
+                        <div class="text-[11px] text-slate-500 truncate max-w-xs">${item.pilotNames.map(n => escapeHtml(n)).join(', ')}</div>
                     </td>
-                    <td class="p-3.5 text-center font-mono font-bold text-[#FAFAF9]">${item.pilots}</td>
-                    <td class="p-3.5 text-center font-mono text-[#A8A29E]">${item.metaShare.toFixed(1)}%</td>
-                    <td class="p-3.5 text-center font-mono text-[#FAFAF9]">${item.matchWins}-${item.matchLosses}-${item.matchDraws}</td>
+                    <td class="p-3.5 text-center font-mono font-bold text-[#F8FAFC]">${item.pilots}</td>
+                    <td class="p-3.5 text-center font-mono text-[#94A3B8]">${item.metaShare.toFixed(1)}%</td>
+                    <td class="p-3.5 text-center font-mono text-[#F8FAFC]">${item.matchWins}-${item.matchLosses}-${item.matchDraws}</td>
                     <td class="p-3.5 text-center font-mono ${mwBadgeColor}">
                         ${item.matchesPlayed > 0 ? `${item.matchWinRate.toFixed(1)}%` : '—'}
                     </td>
-                    <td class="p-3.5 text-center font-mono text-[#A8A29E]">
-                        ${item.gamesPlayed > 0 ? `${item.gameWinRate.toFixed(1)}% <span class="text-[11px] text-stone-500">(${item.gameWins}-${item.gameLosses})</span>` : '—'}
+                    <td class="p-3.5 text-center font-mono text-[#94A3B8]">
+                        ${item.gamesPlayed > 0 ? `${item.gameWinRate.toFixed(1)}% <span class="text-[11px] text-slate-500">(${item.gameWins}-${item.gameLosses})</span>` : '—'}
                     </td>
                     <td class="p-3.5 text-center font-mono">
                         ${hasTopCut
-                            ? `<span class="px-2 py-0.5 rounded text-xs ${item.topCutCount > 0 ? 'bg-[#F59E0B]/20 text-amber-300 border border-[#F59E0B]/40 font-bold' : 'text-stone-500'}">${item.topCutCount} / ${item.pilots} (${item.conversionRate.toFixed(0)}%)</span>`
-                            : '<span class="text-xs text-stone-600 italic">Pending Cut</span>'
+                            ? `<span class="px-2 py-0.5 rounded text-xs ${item.topCutCount > 0 ? 'bg-[#38BDF8]/20 text-sky-300 border border-[#38BDF8]/40 font-bold' : 'text-slate-500'}">${item.topCutCount} / ${item.pilots} (${item.conversionRate.toFixed(0)}%)</span>`
+                            : '<span class="text-xs text-slate-600 italic">Pending Cut</span>'
                         }
                     </td>
                 </tr>
@@ -142,7 +142,7 @@
         if (!container) return;
 
         if (state.players.length === 0) {
-            container.innerHTML = '<div class="p-12 text-center text-stone-500 italic">No Players registered yet. Add players and record match results to populate the Winrate Matrix.</div>';
+            container.innerHTML = '<div class="p-12 text-center text-slate-500 italic">No Players registered yet. Add players and record match results to populate the Winrate Matrix.</div>';
             return;
         }
 
@@ -159,22 +159,22 @@
         container.innerHTML = `
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
-                    <tr class="bg-stone-900/90 text-[#A8A29E] border-b border-stone-800">
-                        <th class="p-3.5 font-semibold sticky left-0 bg-stone-900 z-10 border-r border-stone-800 min-w-[180px]">
+                    <tr class="bg-slate-900/90 text-[#94A3B8] border-b border-slate-800">
+                        <th class="p-3.5 font-semibold sticky left-0 bg-slate-900 z-10 border-r border-slate-800 min-w-[180px]">
                             Row vs. Column
                         </th>
-                        <th class="p-3 font-semibold text-center bg-stone-900/60 border-r border-stone-800 min-w-[95px]">
+                        <th class="p-3 font-semibold text-center bg-slate-900/60 border-r border-slate-800 min-w-[95px]">
                             Overall (Non-Mirror)
                         </th>
                         ${activeLegends.map(colLegend => `
-                            <th class="p-3 font-semibold text-center border-r border-stone-800/60 min-w-[105px]" title="${escapeHtml(colLegend)}">
-                                <div class="text-amber-400 font-bold truncate">${escapeHtml(shortLegendName(colLegend))}</div>
-                                <div class="text-[10px] text-stone-500 font-normal truncate">${escapeHtml(colLegend.split(',')[1] || '')}</div>
+                            <th class="p-3 font-semibold text-center border-r border-slate-800/60 min-w-[105px]" title="${escapeHtml(colLegend)}">
+                                <div class="text-sky-400 font-bold truncate">${escapeHtml(shortLegendName(colLegend))}</div>
+                                <div class="text-[10px] text-slate-500 font-normal truncate">${escapeHtml(colLegend.split(',')[1] || '')}</div>
                             </th>
                         `).join('')}
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-stone-800/70">
+                <tbody class="divide-y divide-slate-800/70">
                     ${activeLegends.map(rowLegend => {
                         let totalM = 0, totalMW = 0, totalML = 0, totalMD = 0;
                         let totalG = 0, totalGW = 0, totalGL = 0;
@@ -200,32 +200,32 @@
                             : `${totalMW}-${totalML}${totalMD > 0 ? `-${totalMD}` : ''}`;
 
                         return `
-                            <tr class="border-b border-stone-800 last:border-b-0 hover:bg-stone-900/30 transition-colors">
-                                <td class="p-3.5 font-semibold sticky left-0 bg-[#141210] z-10 border-r border-stone-800" title="${escapeHtml(rowLegend)}">
-                                    <div class="text-[#FAFAF9] truncate">${escapeHtml(shortLegendName(rowLegend))}</div>
-                                    <div class="text-[10px] text-amber-400/80 font-normal truncate">${escapeHtml(rowLegend.split(',')[1] || '')}</div>
+                            <tr class="border-b border-slate-800 last:border-b-0 hover:bg-slate-900/30 transition-colors">
+                                <td class="p-3.5 font-semibold sticky left-0 bg-[#0D1320] z-10 border-r border-slate-800" title="${escapeHtml(rowLegend)}">
+                                    <div class="text-[#F8FAFC] truncate">${escapeHtml(shortLegendName(rowLegend))}</div>
+                                    <div class="text-[10px] text-sky-400/80 font-normal truncate">${escapeHtml(rowLegend.split(',')[1] || '')}</div>
                                 </td>
-                                <td class="p-3 text-center font-mono border-r border-stone-800 bg-stone-900/30">
+                                <td class="p-3 text-center font-mono border-r border-slate-800 bg-slate-900/30">
                                     ${overallWinPct !== null ? `
-                                        <div class="font-bold ${overallWinPct > 55 ? 'text-emerald-400' : overallWinPct < 45 ? 'text-red-400' : 'text-amber-300'}">${overallWinPct.toFixed(0)}%</div>
-                                        <div class="text-[10px] text-[#A8A29E]">(${overallRecordStr})</div>
-                                    ` : '<span class="text-stone-600">—</span>'}
+                                        <div class="font-bold ${overallWinPct > 55 ? 'text-emerald-400' : overallWinPct < 45 ? 'text-red-400' : 'text-sky-300'}">${overallWinPct.toFixed(0)}%</div>
+                                        <div class="text-[10px] text-[#94A3B8]">(${overallRecordStr})</div>
+                                    ` : '<span class="text-slate-600">—</span>'}
                                 </td>
                                 ${activeLegends.map(colLegend => {
                                     const cell = matrix[rowLegend][colLegend];
 
                                     if (rowLegend === colLegend) {
                                         return `
-                                            <td class="p-3 text-center font-mono bg-stone-900/40 border-r border-stone-800/60 text-stone-500" title="Mirror Match (${escapeHtml(shortLegendName(rowLegend))})">
+                                            <td class="p-3 text-center font-mono bg-slate-900/40 border-r border-slate-800/60 text-slate-500" title="Mirror Match (${escapeHtml(shortLegendName(rowLegend))})">
                                                 <div class="text-[10px] uppercase tracking-wider">Mirror</div>
-                                                <div class="text-[10px] text-stone-600">${cell.matches > 0 ? `${cell.matches} played` : '—'}</div>
+                                                <div class="text-[10px] text-slate-600">${cell.matches > 0 ? `${cell.matches} played` : '—'}</div>
                                             </td>
                                         `;
                                     }
 
                                     const sample = metric === 'game' ? cell.games : cell.matches;
                                     if (sample === 0) {
-                                        return '<td class="p-3 text-center font-mono border-r border-stone-800/60 text-stone-700">—</td>';
+                                        return '<td class="p-3 text-center font-mono border-r border-slate-800/60 text-slate-700">—</td>';
                                     }
 
                                     const wins = metric === 'game' ? cell.gWins : cell.mWins;
@@ -243,7 +243,7 @@
                                     }
 
                                     return `
-                                        <td class="p-3 text-center font-mono border-r border-stone-800/60 ${cellStyle}" title="${escapeHtml(shortLegendName(rowLegend))} vs ${escapeHtml(shortLegendName(colLegend))}: ${recordText} (${winPct.toFixed(1)}%)">
+                                        <td class="p-3 text-center font-mono border-r border-slate-800/60 ${cellStyle}" title="${escapeHtml(shortLegendName(rowLegend))} vs ${escapeHtml(shortLegendName(colLegend))}: ${recordText} (${winPct.toFixed(1)}%)">
                                             <div class="font-bold">${winPct.toFixed(0)}%</div>
                                             <div class="text-[10px] opacity-80">(${recordText})</div>
                                         </td>

@@ -66,8 +66,8 @@
             const navEl = document.getElementById(`nav-${id}`);
             if (tabEl) tabEl.classList.add('hidden');
             if (navEl) {
-                navEl.classList.remove('bg-[#F59E0B]', 'text-[#12100E]', 'font-semibold', 'shadow');
-                navEl.classList.add('text-[#A8A29E]');
+                navEl.classList.remove('bg-[#38BDF8]', 'text-[#082F49]', 'font-semibold', 'shadow');
+                navEl.classList.add('text-[#94A3B8]');
             }
         });
 
@@ -75,8 +75,8 @@
         const activeNavEl = document.getElementById(`nav-${tabId}`);
         if (activeTabEl) activeTabEl.classList.remove('hidden');
         if (activeNavEl) {
-            activeNavEl.classList.add('bg-[#F59E0B]', 'text-[#12100E]', 'font-semibold', 'shadow');
-            activeNavEl.classList.remove('text-[#A8A29E]');
+            activeNavEl.classList.add('bg-[#38BDF8]', 'text-[#082F49]', 'font-semibold', 'shadow');
+            activeNavEl.classList.remove('text-[#94A3B8]');
         }
 
         renderActiveView();
@@ -204,8 +204,8 @@
                 openModal(
                     'Import Completed with Unrecognized Legends',
                     `<p class="mb-2">Imported <strong>${addedCount}</strong> Player(s).</p>
-                     <p class="text-xs text-amber-300 mb-2">The following Legend names did not match the 58 official Riftbound Legends and were left unassigned (you can select them in the Registered Roster table):</p>
-                     <ul class="list-disc pl-5 text-xs text-[#A8A29E] space-y-1">${unmatchedLegends.map(item => `<li>${item}</li>`).join('')}</ul>`,
+                     <p class="text-xs text-sky-300 mb-2">The following Legend names did not match the 58 official Riftbound Legends and were left unassigned (you can select them in the Registered Roster table):</p>
+                     <ul class="list-disc pl-5 text-xs text-[#94A3B8] space-y-1">${unmatchedLegends.map(item => `<li>${item}</li>`).join('')}</ul>`,
                     null,
                     true
                 );
@@ -646,7 +646,7 @@
 
         if (state.players.length < 2) {
             if (container) {
-                container.innerHTML = '<p class="text-amber-400/80 italic text-center py-12">Register players first to build an elimination bracket.</p>';
+                container.innerHTML = '<p class="text-sky-400/80 italic text-center py-12">Register players first to build an elimination bracket.</p>';
             }
             return;
         }
@@ -732,11 +732,12 @@
 
     function handleOpenMainHub() {
         const isFileProtocol = window.location.protocol === 'file:';
-        const inSubfolder = window.location.pathname.replace(/\/+$/, '').endsWith('/ukraineopen');
+        const cleanPath = window.location.pathname.replace(/\/+$/, '');
+        const strippedPath = cleanPath.replace(/\/ukraineopen(?:\.html)?$/i, '') || '';
         if (isFileProtocol) {
-            window.location.href = inSubfolder ? '../index.html' : 'index.html';
+            window.location.href = `${strippedPath}/index.html`;
         } else {
-            window.location.href = inSubfolder ? '../' : './';
+            window.location.href = `${strippedPath}/`;
         }
     }
 

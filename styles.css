@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* ============================================================================
-   THEME DEFINITIONS: Midnight Arcane (Dark) & Sage Paper (Light)
+   THEME DEFINITIONS: Midnight Arcane (Default Dark) & Sage Paper (Light)
    ============================================================================ */
 
 :root,
@@ -82,8 +82,7 @@ h1, h2, h3, .font-arcane {
     background-image: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)) !important;
 }
 
-.theme-checkbox,
-.accent-\[\#F59E0B\] {
+.theme-checkbox {
     accent-color: var(--accent-primary) !important;
 }
 
@@ -113,110 +112,109 @@ h1, h2, h3, .font-arcane {
     outline: none;
 }
 
-/* Surface & Border Overrides */
-.bg-\[\#12100E\] {
+/* Light-theme overrides for Midnight Arcane Tailwind utility classes */
+html.light .bg-\[\#0A0E17\] {
     background-color: var(--bg-primary) !important;
 }
 
-.bg-\[\#1C1917\],
-.bg-stone-900\/90,
-.bg-stone-900 {
+html.light .bg-\[\#111827\],
+html.light .bg-slate-900\/90,
+html.light .bg-slate-900 {
     background-color: var(--bg-surface) !important;
 }
 
-.bg-\[\#141210\],
-.bg-stone-900\/60,
-.bg-stone-900\/40,
-.bg-stone-900\/30 {
+html.light .bg-\[\#0D1320\],
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900\/40,
+html.light .bg-slate-900\/30 {
     background-color: var(--bg-recessed) !important;
 }
 
-.bg-stone-800 {
+html.light .bg-slate-800 {
     background-color: var(--bg-surface-elevated) !important;
 }
 
-.hover\:bg-stone-700:hover:not(:disabled) {
+.hover\:bg-slate-700:hover:not(:disabled) {
     filter: brightness(1.12);
 }
 
-.hover\:bg-stone-900\/50:hover,
-.hover\:bg-stone-900\/30:hover {
+.hover\:bg-slate-900\/50:hover,
+.hover\:bg-slate-900\/30:hover {
     background-color: var(--accent-primary-soft) !important;
 }
 
-.border-stone-800,
-.border-stone-800\/80,
-.border-stone-800\/60,
-.border-stone-700,
-.border-stone-700\/80 {
+html.light .border-slate-800,
+html.light .border-slate-800\/80,
+html.light .border-slate-800\/60,
+html.light .border-slate-700,
+html.light .border-slate-700\/80 {
     border-color: var(--border-subtle) !important;
 }
 
-/* Uniform table row divider lines across all rows (including under row 1) in both themes */
-.divide-stone-800\/70 > *,
+/* Uniform table row divider lines across all rows in both themes */
+.divide-slate-800\/70 > *,
 .divide-y > * {
     border-color: var(--border-subtle) !important;
 }
 
-/* Text Overrides */
-.text-\[\#FAFAF9\] {
+html.light .text-\[\#F8FAFC\] {
     color: var(--text-primary) !important;
 }
 
-.text-\[\#A8A29E\] {
+html.light .text-\[\#94A3B8\] {
     color: var(--text-secondary) !important;
 }
 
-.text-stone-500,
-.text-stone-600,
-.text-stone-700 {
+html.light .text-slate-500,
+html.light .text-slate-600,
+html.light .text-slate-700 {
     color: var(--text-muted) !important;
 }
 
 /* Primary Accent Overrides (Active Tabs, Headings, Primary Buttons, Badges) */
-.bg-\[\#F59E0B\] {
+.bg-\[\#38BDF8\] {
     background-color: var(--accent-primary) !important;
 }
 
-.bg-\[\#F59E0B\]:hover:not(:disabled) {
+.bg-\[\#38BDF8\]:hover:not(:disabled) {
     background-color: var(--accent-primary-hover) !important;
 }
 
-.text-\[\#12100E\] {
+.text-\[\#082F49\] {
     color: var(--accent-contrast) !important;
 }
 
-.text-\[\#F59E0B\],
-.text-amber-400,
-.text-amber-400\/90,
-.text-amber-400\/80,
-.text-amber-300 {
+.text-\[\#38BDF8\],
+.text-sky-400,
+.text-sky-400\/90,
+.text-sky-400\/80,
+.text-sky-300 {
     color: var(--accent-primary-text) !important;
 }
 
-.bg-gradient-to-r.from-\[\#F59E0B\].to-amber-600 {
+.bg-gradient-to-r.from-\[\#38BDF8\].to-sky-500 {
     background-image: linear-gradient(to right, var(--accent-primary), var(--accent-primary-hover)) !important;
 }
 
-.bg-gradient-to-r.from-\[\#F59E0B\].to-amber-600:hover:not(:disabled) {
+.bg-gradient-to-r.from-\[\#38BDF8\].to-sky-500:hover:not(:disabled) {
     filter: brightness(1.08);
 }
 
-.border-\[\#F59E0B\],
-.border-\[\#F59E0B\]\/40,
-.border-\[\#F59E0B\]\/50,
-.border-\[\#F59E0B\]\/70,
-.border-amber-500\/30,
-.border-amber-500\/40,
-.border-amber-500\/50 {
+.border-\[\#38BDF8\],
+.border-\[\#38BDF8\]\/40,
+.border-\[\#38BDF8\]\/50,
+.border-\[\#38BDF8\]\/70,
+.border-sky-500\/30,
+.border-sky-500\/40,
+.border-sky-500\/50 {
     border-color: var(--accent-primary-border) !important;
 }
 
-.bg-\[\#F59E0B\]\/10,
-.bg-\[\#F59E0B\]\/20,
-.bg-amber-950\/40,
-.bg-amber-950\/50,
-.bg-amber-950\/60 {
+.bg-\[\#38BDF8\]\/10,
+.bg-\[\#38BDF8\]\/20,
+.bg-sky-950\/40,
+.bg-sky-950\/50,
+.bg-sky-950\/60 {
     background-color: var(--accent-primary-soft) !important;
 }
 
