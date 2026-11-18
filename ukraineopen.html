@@ -72,45 +72,15 @@
         <!-- ================= TAB 1: PLAYERS ================= -->
         <section id="tab-players" class="hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Registration Card (Read-Only in Ukraine Open) -->
-                <div class="theme-card bg-[#111827] border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+                <!-- Tournament Controls Card (Read-Only in Ukraine Open) -->
+                <div class="theme-card bg-[#111827] border border-slate-800 rounded-2xl p-6 relative overflow-hidden self-start">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-[#38BDF8]/5 rounded-full blur-3xl pointer-events-none"></div>
-                    <h2 class="text-xl font-bold font-arcane text-[#38BDF8] mb-4 flex items-center gap-2">
-                        <span>⚔️</span> Register Player
-                    </h2>
-                    <form id="player-form" class="space-y-4">
-                        <div>
-                            <label for="p-name" class="block text-xs uppercase tracking-wider text-[#94A3B8] font-semibold mb-1">Player Name</label>
-                            <input type="text" id="p-name" disabled required placeholder="e.g. Faker"
-                                class="theme-input w-full bg-[#0D1320] border border-slate-800 rounded-xl px-4 py-2.5 text-[#F8FAFC] placeholder-slate-600 opacity-50 cursor-not-allowed">
-                        </div>
-                        <div>
-                            <label for="p-deck" class="block text-xs uppercase tracking-wider text-[#94A3B8] font-semibold mb-1">Legend</label>
-                            <select id="p-deck" disabled
-                                class="theme-input w-full bg-[#0D1320] border border-slate-800 rounded-xl px-4 py-2.5 text-[#F8FAFC] opacity-50 cursor-not-allowed">
-                                <option value="" selected>No Legend Selected (Optional)</option>
-                            </select>
-                        </div>
-                        <button type="submit" disabled class="w-full py-3 bg-gradient-to-r from-[#38BDF8] to-sky-500 text-[#082F49] font-bold font-arcane rounded-xl shadow-lg opacity-40 cursor-not-allowed">
-                            Add to Tournament
-                        </button>
-                    </form>
-
-                    <!-- Bulk Import from TXT (Disabled) -->
-                    <div class="mt-6 pt-6 border-t border-slate-800 space-y-3">
-                        <h3 class="text-sm font-semibold text-[#F8FAFC] uppercase tracking-wider">Bulk Import (.txt)</h3>
-                        <p class="text-xs text-[#94A3B8] leading-relaxed">
-                            Format: <code class="text-sky-400 bg-[#0D1320] px-1.5 py-0.5 rounded border border-slate-800">Name - Legend</code> (one per row, Legend can be empty).
-                        </p>
-                        <input type="file" id="txt-file-input" accept=".txt,text/plain" class="hidden" disabled>
-                        <button type="button" disabled class="w-full py-2.5 bg-slate-800 text-sky-300 text-sm font-medium rounded-xl border border-slate-700 opacity-40 cursor-not-allowed flex items-center justify-center gap-2">
-                            <span>📄</span> Import Players from .txt
-                        </button>
-                    </div>
 
                     <!-- Tournament Controls & Snapshot Backup -->
-                    <div class="mt-6 pt-6 border-t border-slate-800 space-y-3">
-                        <h3 class="text-sm font-semibold text-[#F8FAFC] uppercase tracking-wider">Tournament Controls</h3>
+                    <div class="space-y-3">
+                        <h2 class="text-xl font-bold font-arcane text-[#38BDF8] mb-4 flex items-center gap-2">
+                            <span>⚙️</span> Tournament Controls
+                        </h2>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             <button type="button" data-action="download-snapshot" class="py-2.5 px-3 bg-sky-950/40 hover:bg-sky-950/80 text-sky-300 text-xs font-semibold rounded-xl border border-sky-500/40 transition-colors cursor-pointer flex items-center justify-center gap-1.5">
                                 <span>💾</span> Save Snapshot
