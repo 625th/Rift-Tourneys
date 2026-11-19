@@ -793,28 +793,95 @@
         renderActiveView();
     }
 
-    function handleAdminLogin() {
-        const { openModal } = Riftbound.dom;
-        openModal(
-            'Organizer Login',
-            `<p class="text-xs text-[#94A3B8] mb-3">Paste your GitHub Personal Access Token (gist scope) to unlock Admin Mode. It is stored only in this browser's localStorage.</p>
-             <input type="password" id="gist-token-input" autocomplete="off" placeholder="ghp_... or github_pat_..."
-                class="theme-input w-full bg-[#0D1320] border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-[#F8FAFC] placeholder-slate-600 focus:outline-none focus:border-[#38BDF8] transition-colors">`,
-            () => {
-                const input = document.getElementById('gist-token-input');
-                const token = input ? input.value.trim() : '';
-                if (!token) return;
-                localStorage.setItem(GIST_TOKEN_KEY, token);
-                applyGistRoleUI();
+    async function validateGistToken(token) {
+        const res = await fetch('https://api.github.com/user', {
+            cache: 'no-store',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/vnd.github+json'
             }
+        });
+
+        if (res.status === 401) {
+            throw new Error('Incorrect password. Please try again.');
+        }
+        if (!res.ok) {
+            throw new Error('Could not verify password. Please try again.');
+        }
+
+        const scopesHeader = res.headers.get('X-OAuth-Scopes');
+        if (scopesHeader !== null) {
+            const scopes = scopesHeader.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+            if (!scopes.includes('gist')) {
+                throw new Error('Incorrect password. Please try again.');
+            }
+        }
+
+        const userData = await res.json();
+        const expectedUser = activeGistConfig && activeGistConfig.user ? activeGistConfig.user.toLowerCase() : null;
+        if (expectedUser && userData && userData.login && userData.login.toLowerCase() !== expectedUser) {
+            throw new Error('Incorrect password. Please try again.');
+        }
+    }
+
+    function handleAdminLogin() {
+        const { openModal, closeModal } = Riftbound.dom;
+        openModal(
+            'Admin Login',
+            `<p class="text-xs text-[#94A3B8] mb-3">Enter the admin password to unlock tournament editing controls.</p>
+             <input type="password" id="gist-token-input" autocomplete="current-password" placeholder="Enter password..."
+                class="theme-input w-full bg-[#0D1320] border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-[#F8FAFC] placeholder-slate-600 focus:outline-none focus:border-[#38BDF8] transition-colors">
+             <p id="gist-token-error" class="hidden text-xs text-red-400 font-medium mt-2"></p>`,
+            null
         );
 
         const input = document.getElementById('gist-token-input');
+        const errorEl = document.getElementById('gist-token-error');
         const confirmBtn = document.getElementById('modal-confirm-btn');
+
+        const showError = msg => {
+            if (!errorEl) return;
+            errorEl.textContent = msg;
+            errorEl.classList.remove('hidden');
+        };
+
+        if (confirmBtn) {
+            confirmBtn.textContent = 'Unlock';
+            confirmBtn.disabled = false;
+            confirmBtn.onclick = async () => {
+                const token = input ? input.value.trim() : '';
+                if (!token) {
+                    showError('Please enter a password.');
+                    if (input) input.focus();
+                    return;
+                }
+
+                if (errorEl) errorEl.classList.add('hidden');
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Checking...';
+
+                try {
+                    await validateGistToken(token);
+                    localStorage.setItem(GIST_TOKEN_KEY, token);
+                    confirmBtn.disabled = false;
+                    closeModal();
+                    applyGistRoleUI();
+                } catch (err) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = 'Unlock';
+                    showError(err.message || 'Incorrect password. Please try again.');
+                    if (input) {
+                        input.focus();
+                        input.select();
+                    }
+                }
+            };
+        }
+
         if (input) {
             input.focus();
             input.addEventListener('keydown', e => {
-                if (e.key === 'Enter' && confirmBtn) {
+                if (e.key === 'Enter' && confirmBtn && !confirmBtn.disabled) {
                     e.preventDefault();
                     confirmBtn.click();
                 }
@@ -866,7 +933,7 @@
             if (!jsonText) {
                 const rawRes = await fetch(rawUrl, { cache: 'no-store' });
                 if (!rawRes.ok) {
-                    throw new Error(`GitHub Gist request failed (${rawRes.status})`);
+                    throw new Error(`Could not load tournament data (HTTP ${rawRes.status})`);
                 }
                 jsonText = await rawRes.text();
             }
@@ -952,7 +1019,7 @@
             const { escapeHtml, openModal } = Riftbound.dom;
             openModal(
                 'Upload Failed',
-                `Could not upload tournament changes. Verify your GitHub token has the <strong>gist</strong> scope and try again.<br><br><span class="text-xs text-red-400 font-mono">${escapeHtml(err.message)}</span>`,
+                `Could not upload tournament changes. Please check your connection or log in again and retry.<br><br><span class="text-xs text-red-400 font-mono">${escapeHtml(err.message)}</span>`,
                 null,
                 true
             );
