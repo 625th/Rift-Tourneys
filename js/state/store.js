@@ -1,7 +1,13 @@
 (() => {
     const Riftbound = (window.Riftbound = window.Riftbound || {});
 
-    const STORAGE_KEY = 'riftbound_tournament_state';
+    let storageKey = 'riftbound_tournament_state';
+
+    function setStorageKey(key) {
+        if (key && typeof key === 'string') {
+            storageKey = key;
+        }
+    }
 
     function createInitialState() {
         return {
@@ -17,6 +23,11 @@
     let state = createInitialState();
     let selectedSwapSlot = null; // { roundIdx, matchId, slot: 'p1' | 'p2' }
     let readOnlyMode = false;
+    let onStateSavedCallback = null;
+
+    function setOnStateSaved(cb) {
+        onStateSavedCallback = typeof cb === 'function' ? cb : null;
+    }
 
     function isReadOnly() {
         return readOnlyMode;
@@ -39,14 +50,17 @@
         selectedSwapSlot = slotObj;
     }
 
-    function saveState() {
+    function saveState(silent = false) {
         if (readOnlyMode) return;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(storageKey, JSON.stringify(state));
+        if (!silent && onStateSavedCallback) {
+            onStateSavedCallback();
+        }
     }
 
     function loadState() {
         if (readOnlyMode) return;
-        const saved = localStorage.getItem(STORAGE_KEY);
+        const saved = localStorage.getItem(storageKey);
         if (!saved) return;
 
         try {
@@ -211,6 +225,8 @@
     }
 
     Riftbound.store = {
+        setStorageKey,
+        setOnStateSaved,
         isReadOnly,
         setReadOnly,
         getState,

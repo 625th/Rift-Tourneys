@@ -672,38 +672,203 @@
         renderActiveView();
     }
 
-    // --- Remote Gist Tournament Loader (Read-Only Showcase Mode) ---
-    async function loadTournamentFromGist(gistId, gistUser = '625th') {
-        const rawUrl = `https://gist.githubusercontent.com/${gistUser}/${gistId}/raw`;
+    const GIST_DEFAULT_CONFIG = {
+        id: 'fcf4dd2f5807b3017c5fe1341f5bb73f',
+        filename: 'ukraineopen.json',
+        user: '625th'
+    };
+    const GIST_TOKEN_KEY = 'riftbound_gist_token';
+
+    let activeGistConfig = null;
+    let hasUnsavedChanges = false;
+    let gistSyncState = 'idle'; // 'idle' | 'loading' | 'synced' | 'unsaved' | 'uploading' | 'uploaded' | 'error'
+    let gistSyncError = '';
+
+    function getGistToken() {
+        return (localStorage.getItem(GIST_TOKEN_KEY) || '').trim();
+    }
+
+    function isGistAdminUnlocked() {
+        return Boolean(activeGistConfig && getGistToken());
+    }
+
+    function updateSyncStatusUI() {
+        const statusEl = document.getElementById('gist-sync-status');
+        const uploadBtn = document.getElementById('upload-gist-btn');
+        const headerDot = document.getElementById('header-unsaved-dot');
+
+        if (headerDot) {
+            headerDot.classList.toggle('hidden', !hasUnsavedChanges);
+        }
+
+        if (uploadBtn) {
+            uploadBtn.disabled = gistSyncState === 'uploading';
+            if (gistSyncState === 'uploading') {
+                uploadBtn.innerHTML = '<span>⏳</span> Uploading...';
+            } else if (hasUnsavedChanges) {
+                uploadBtn.innerHTML = '<span>☁️</span> Upload Changes •';
+            } else {
+                uploadBtn.innerHTML = '<span>☁️</span> Upload Changes';
+            }
+        }
+
+        if (!statusEl) return;
+
+        statusEl.classList.remove('text-[#94A3B8]', 'text-amber-400', 'text-emerald-400', 'text-red-400', 'text-sky-400');
+
+        switch (gistSyncState) {
+            case 'loading':
+                statusEl.textContent = 'Loading tournament data...';
+                statusEl.classList.add('text-sky-400');
+                break;
+            case 'unsaved':
+                statusEl.textContent = '● Unsaved local changes — click Upload Changes to publish';
+                statusEl.classList.add('text-amber-400');
+                break;
+            case 'uploading':
+                statusEl.textContent = 'Uploading changes...';
+                statusEl.classList.add('text-sky-400');
+                break;
+            case 'uploaded':
+                statusEl.textContent = `✓ Uploaded at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                statusEl.classList.add('text-emerald-400');
+                break;
+            case 'error':
+                statusEl.textContent = gistSyncError ? `Upload failed: ${gistSyncError}` : 'Upload failed';
+                statusEl.classList.add('text-red-400');
+                break;
+            case 'synced':
+                statusEl.textContent = 'Up to date with published tournament';
+                statusEl.classList.add('text-[#94A3B8]');
+                break;
+            default:
+                statusEl.textContent = '';
+                statusEl.classList.add('text-[#94A3B8]');
+                break;
+        }
+    }
+
+    function markUnsavedChanges() {
+        if (!activeGistConfig || !isGistAdminUnlocked()) return;
+        hasUnsavedChanges = true;
+        gistSyncState = 'unsaved';
+        gistSyncError = '';
+        updateSyncStatusUI();
+    }
+
+    function applyGistRoleUI() {
+        if (!activeGistConfig) return;
+        const isAdmin = isGistAdminUnlocked();
+
+        Riftbound.store.setReadOnly(!isAdmin);
+
+        document.querySelectorAll('[data-admin-only]').forEach(el => {
+            el.classList.toggle('hidden', !isAdmin);
+        });
+
+        const loginBtn = document.getElementById('admin-login-btn');
+        const logoutBtn = document.getElementById('admin-logout-btn');
+        const adminBadge = document.getElementById('admin-mode-badge');
+        const controlsSection = document.getElementById('tournament-controls-section');
+
+        if (loginBtn) loginBtn.classList.toggle('hidden', isAdmin);
+        if (logoutBtn) logoutBtn.classList.toggle('hidden', !isAdmin);
+        if (adminBadge) {
+            adminBadge.classList.toggle('hidden', !isAdmin);
+            adminBadge.classList.toggle('inline-flex', isAdmin);
+        }
+        if (controlsSection) {
+            controlsSection.classList.toggle('mt-6', isAdmin);
+            controlsSection.classList.toggle('pt-6', isAdmin);
+            controlsSection.classList.toggle('border-t', isAdmin);
+            controlsSection.classList.toggle('border-slate-800', isAdmin);
+        }
+
+        const forcePanel = document.getElementById('force-pairings-panel');
+        if (!isAdmin && forcePanel) {
+            forcePanel.classList.add('hidden');
+        }
+
+        updateSyncStatusUI();
+        renderActiveView();
+    }
+
+    function handleAdminLogin() {
+        const { openModal } = Riftbound.dom;
+        openModal(
+            'Organizer Login',
+            `<p class="text-xs text-[#94A3B8] mb-3">Paste your GitHub Personal Access Token (gist scope) to unlock Admin Mode. It is stored only in this browser's localStorage.</p>
+             <input type="password" id="gist-token-input" autocomplete="off" placeholder="ghp_... or github_pat_..."
+                class="theme-input w-full bg-[#0D1320] border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-[#F8FAFC] placeholder-slate-600 focus:outline-none focus:border-[#38BDF8] transition-colors">`,
+            () => {
+                const input = document.getElementById('gist-token-input');
+                const token = input ? input.value.trim() : '';
+                if (!token) return;
+                localStorage.setItem(GIST_TOKEN_KEY, token);
+                applyGistRoleUI();
+            }
+        );
+
+        const input = document.getElementById('gist-token-input');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        if (input) {
+            input.focus();
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && confirmBtn) {
+                    e.preventDefault();
+                    confirmBtn.click();
+                }
+            });
+        }
+    }
+
+    function handleAdminLogout() {
+        localStorage.removeItem(GIST_TOKEN_KEY);
+        hasUnsavedChanges = false;
+        gistSyncState = 'synced';
+        gistSyncError = '';
+        applyGistRoleUI();
+    }
+
+    // --- Remote Gist Tournament Loader & Publisher ---
+    async function loadTournamentFromGist(config) {
+        const { id: gistId, filename: gistFile, user: gistUser } = config;
         const apiUrl = `https://api.github.com/gists/${gistId}`;
+        const rawUrl = `https://gist.githubusercontent.com/${gistUser}/${gistId}/raw`;
+
+        gistSyncState = 'loading';
+        updateSyncStatusUI();
 
         try {
             let jsonText = null;
             try {
-                const rawRes = await fetch(rawUrl, { cache: 'no-store' });
-                if (rawRes.ok) {
-                    jsonText = await rawRes.text();
+                const apiRes = await fetch(apiUrl, {
+                    cache: 'no-store',
+                    headers: { Accept: 'application/vnd.github+json' }
+                });
+                if (apiRes.ok) {
+                    const gistData = await apiRes.json();
+                    const filesMap = gistData && gistData.files ? gistData.files : {};
+                    const targetFile = filesMap[gistFile] || Object.values(filesMap)[0];
+                    if (targetFile) {
+                        if (targetFile.content && !targetFile.truncated) {
+                            jsonText = targetFile.content;
+                        } else if (targetFile.raw_url) {
+                            const fileRes = await fetch(targetFile.raw_url, { cache: 'no-store' });
+                            if (fileRes.ok) jsonText = await fileRes.text();
+                        }
+                    }
                 }
             } catch (_) {
-                // Fallback to GitHub Gist API below
+                // Fallback to raw Gist URL below
             }
 
             if (!jsonText) {
-                const apiRes = await fetch(apiUrl, { cache: 'no-store' });
-                if (!apiRes.ok) {
-                    throw new Error(`GitHub Gist request failed (${apiRes.status})`);
+                const rawRes = await fetch(rawUrl, { cache: 'no-store' });
+                if (!rawRes.ok) {
+                    throw new Error(`GitHub Gist request failed (${rawRes.status})`);
                 }
-                const gistData = await apiRes.json();
-                const files = gistData && gistData.files ? Object.values(gistData.files) : [];
-                if (files.length === 0) {
-                    throw new Error('No files found in the specified GitHub Gist.');
-                }
-                if (files[0].content) {
-                    jsonText = files[0].content;
-                } else if (files[0].raw_url) {
-                    const fileRes = await fetch(files[0].raw_url, { cache: 'no-store' });
-                    jsonText = await fileRes.text();
-                }
+                jsonText = await rawRes.text();
             }
 
             const restored = Riftbound.store.restoreFromSnapshotJson(jsonText, true);
@@ -713,32 +878,102 @@
                 if (cutSelect) cutSelect.value = String(restored.eliminationBracket.cutSize);
             }
 
+            hasUnsavedChanges = false;
+            gistSyncState = 'synced';
+            gistSyncError = '';
+            updateSyncStatusUI();
             renderActiveView();
         } catch (err) {
+            gistSyncState = 'error';
+            gistSyncError = err.message;
+            updateSyncStatusUI();
             const { escapeHtml, openModal } = Riftbound.dom;
             openModal(
                 'Failed to Load Ukraine Open Data',
-                `Could not fetch tournament data from GitHub Gist.<br><br><span class="text-xs text-red-400 font-mono">${escapeHtml(err.message)}</span>`,
+                `Could not fetch tournament data.<br><br><span class="text-xs text-red-400 font-mono">${escapeHtml(err.message)}</span>`,
                 null,
                 true
             );
         }
     }
 
+    async function handleUploadChanges() {
+        if (!activeGistConfig) return;
+        const token = getGistToken();
+        if (!token) {
+            handleAdminLogin();
+            return;
+        }
+
+        const { id: gistId, filename: gistFile } = activeGistConfig;
+        const snapshot = Riftbound.store.createSnapshotData();
+        const serialized = JSON.stringify(snapshot, null, 2);
+
+        gistSyncState = 'uploading';
+        gistSyncError = '';
+        updateSyncStatusUI();
+
+        try {
+            const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+                method: 'PATCH',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/vnd.github+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    files: {
+                        [gistFile]: {
+                            content: serialized
+                        }
+                    }
+                })
+            });
+
+            if (!res.ok) {
+                let detail = `HTTP ${res.status}`;
+                try {
+                    const errBody = await res.json();
+                    if (errBody && errBody.message) detail = `${errBody.message} (HTTP ${res.status})`;
+                } catch (_) {
+                    // Keep HTTP status detail
+                }
+                throw new Error(detail);
+            }
+
+            hasUnsavedChanges = false;
+            gistSyncState = 'uploaded';
+            gistSyncError = '';
+            updateSyncStatusUI();
+        } catch (err) {
+            gistSyncState = 'error';
+            gistSyncError = err.message;
+            updateSyncStatusUI();
+            const { escapeHtml, openModal } = Riftbound.dom;
+            openModal(
+                'Upload Failed',
+                `Could not upload tournament changes. Verify your GitHub token has the <strong>gist</strong> scope and try again.<br><br><span class="text-xs text-red-400 font-mono">${escapeHtml(err.message)}</span>`,
+                null,
+                true
+            );
+        }
+    }
+
+    function getBasePath() {
+        const cleanPath = window.location.pathname.replace(/\/+$/, '');
+        return cleanPath.replace(/\/(?:index|ukraineopen)(?:\.html)?$/i, '');
+    }
+
     function handleOpenUkraineOpen() {
         const isFileProtocol = window.location.protocol === 'file:';
-        window.location.href = isFileProtocol ? 'ukraineopen.html' : 'ukraineopen';
+        const basePath = getBasePath();
+        window.location.href = isFileProtocol ? `${basePath}/ukraineopen.html` : `${basePath}/ukraineopen`;
     }
 
     function handleOpenMainHub() {
         const isFileProtocol = window.location.protocol === 'file:';
-        const cleanPath = window.location.pathname.replace(/\/+$/, '');
-        const strippedPath = cleanPath.replace(/\/ukraineopen(?:\.html)?$/i, '') || '';
-        if (isFileProtocol) {
-            window.location.href = `${strippedPath}/index.html`;
-        } else {
-            window.location.href = `${strippedPath}/`;
-        }
+        const basePath = getBasePath();
+        window.location.href = isFileProtocol ? `${basePath}/index.html` : `${basePath}/`;
     }
 
     // --- Event Binding ---
@@ -754,6 +989,13 @@
         document.getElementById('swiss-search-input')?.addEventListener('input', () => Riftbound.swissView.renderSwissRounds());
         document.getElementById('swiss-filter-select')?.addEventListener('change', () => Riftbound.swissView.renderSwissRounds());
         document.getElementById('modal-cancel-btn')?.addEventListener('click', () => Riftbound.dom.closeModal());
+
+        window.addEventListener('beforeunload', e => {
+            if (activeGistConfig && hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
 
         document.getElementById('players-table-body')?.addEventListener('change', e => {
             const select = e.target.closest('select[data-action="update-deck"]');
@@ -771,6 +1013,15 @@
             switch (action) {
                 case 'toggle-theme':
                     handleToggleTheme();
+                    break;
+                case 'admin-login':
+                    handleAdminLogin();
+                    break;
+                case 'admin-logout':
+                    handleAdminLogout();
+                    break;
+                case 'upload-gist':
+                    handleUploadChanges();
                     break;
                 case 'open-ukraine-open':
                     handleOpenUkraineOpen();
@@ -827,7 +1078,7 @@
                 case 'select-round':
                     state.currentRoundIndex = Number(trigger.dataset.roundIdx);
                     Riftbound.store.setSelectedSwapSlot(null);
-                    Riftbound.store.saveState();
+                    Riftbound.store.saveState(true);
                     Riftbound.swissView.renderSwissRounds();
                     break;
                 case 'cancel-swap':
@@ -864,17 +1115,23 @@
         initTheme();
         Riftbound.playersView.populateLegendDropdown();
 
-        const isReadOnlyPage = document.body.dataset.readonly === 'true';
-        const gistId = document.body.dataset.gistId;
-        const gistUser = document.body.dataset.gistUser || '625th';
+        const storageKey = document.body.dataset.storageKey;
+        if (storageKey) {
+            Riftbound.store.setStorageKey(storageKey);
+        }
 
-        if (isReadOnlyPage) {
-            Riftbound.store.setReadOnly(true);
+        const gistId = document.body.dataset.gistId;
+        if (gistId) {
+            activeGistConfig = {
+                id: gistId || GIST_DEFAULT_CONFIG.id,
+                filename: document.body.dataset.gistFile || GIST_DEFAULT_CONFIG.filename,
+                user: document.body.dataset.gistUser || GIST_DEFAULT_CONFIG.user
+            };
+            Riftbound.store.setOnStateSaved(() => markUnsavedChanges());
             bindEvents();
+            applyGistRoleUI();
             switchTab('swiss');
-            if (gistId) {
-                loadTournamentFromGist(gistId, gistUser);
-            }
+            loadTournamentFromGist(activeGistConfig);
         } else {
             Riftbound.store.setReadOnly(false);
             Riftbound.store.loadState();
